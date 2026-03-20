@@ -1,25 +1,73 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:orientation="vertical"
     android:padding="8dp">
+
+    <com.google.android.material.imageview.ShapeableImageView
+        android:id="@+id/ivCommentAuthorProfile"
+        android:layout_width="32dp"
+        android:layout_height="32dp"
+        android:scaleType="centerCrop"
+        android:src="@android:drawable/ic_menu_gallery"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:shapeAppearanceOverlay="@style/ShapeAppearance.MaterialComponents.SmallComponent"
+        app:strokeColor="@color/purple_500"
+        app:strokeWidth="1dp" />
 
     <TextView
         android:id="@+id/tvCommenterName"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="User Name"
+        android:layout_marginStart="8dp"
         android:textSize="12sp"
         android:textStyle="bold"
-        android:textColor="@color/black" />
+        app:layout_constraintStart_toEndOf="@id/ivCommentAuthorProfile"
+        app:layout_constraintTop_toTopOf="@id/ivCommentAuthorProfile"
+        tools:text="Emily Watson" />
 
     <TextView
         android:id="@+id/tvCommentText"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="8dp"
+        android:layout_marginTop="2dp"
+        android:layout_marginEnd="8dp"
+        android:textSize="14sp"
+        app:layout_constraintEnd_toStartOf="@+id/layoutActions"
+        app:layout_constraintStart_toEndOf="@id/ivCommentAuthorProfile"
+        app:layout_constraintTop_toBottomOf="@id/tvCommenterName"
+        tools:text="This is a great book recommendation!" />
+
+    <LinearLayout
+        android:id="@+id/layoutActions"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Comment text goes here..."
-        android:textSize="14sp"
-        android:textColor="@color/black" />
+        android:orientation="horizontal"
+        android:visibility="gone"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        tools:visibility="visible">
 
-</LinearLayout>
+        <ImageButton
+            android:id="@+id/btnEditComment"
+            android:layout_width="36dp"
+            android:layout_height="36dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:src="@android:drawable/ic_menu_edit"
+            app:tint="@color/purple_500" />
+
+        <ImageButton
+            android:id="@+id/btnDeleteComment"
+            android:layout_width="36dp"
+            android:layout_height="36dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:src="@android:drawable/ic_menu_delete"
+            app:tint="@android:color/holo_red_dark" />
+    </LinearLayout>
+
+</androidx.constraintlayout.widget.ConstraintLayout>

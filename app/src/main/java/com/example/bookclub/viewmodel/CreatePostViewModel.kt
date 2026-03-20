@@ -1,5 +1,6 @@
 package com.example.bookclub.viewmodel
 
+import android.util.Log
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
@@ -25,22 +26,40 @@ class CreatePostViewModel : ViewModel() {
     val errorMessage: LiveData<String?> = _errorMessage
 
     fun savePost(bookTitle: String, content: String) {
-        val userId = auth.currentUser?.uid ?: return
-        
         viewModelScope.launch {
             _isLoading.value = true
             try {
-                val postRef = firestore.collection("posts").document()
-                val post = Post(
-                    id = postRef.id,
-                    userId = userId,
-                    bookTitle = bookTitle,
-                    content = content,
-                    timestamp = System.currentTimeMillis(),
-                    likes = emptyList()
-                )
-                postRef.set(post).await()
-                _postSaved.value = true
+                val userId = auth.currentUser?.uid
+                
+                if (userId != null) {
+                    val userDoc = firestore.collection("users").document(userId).get().await()
+                    
+                    if (userDoc.exists()) {
+                        val fetchedName = userDoc.getString("name") ?: "Anonymous"
+                        val profileImageUrl = userDoc.getString("profileImageUrl") ?: ""
+                        
+                        val postRef = firestore.collection("posts").document()
+                        val post = Post(
+                            id = postRef.id,
+                            userId = userId,
+                            userName = fetchedName,
+                            profileImageUrl = profileImageUrl,
+                            bookTitle = bookTitle,
+                            content = content,
+                            timestamp = System.currentTimeMillis(),
+                            likedBy = emptyList(),
+                            likesCount = 0
+                        )
+                        postRef.set(post).await()
+                        _postSaved.value = true
+                    } else {
+                        _errorMessage.value = "User profile not found"
+                        _postSaved.value = false
+                    }
+                } else {
+                    _errorMessage.value = "Not logged in"
+                    _postSaved.value = false
+                }
             } catch (e: Exception) {
                 _errorMessage.value = e.message
                 _postSaved.value = false

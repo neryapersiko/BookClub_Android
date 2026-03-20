@@ -59,13 +59,145 @@ class BookRepository(
         }
     }
 
+    fun getPostsRealtime(onUpdate: (List<Post>) -> Unit) {
+        firestore.collection("posts")
+            .orderBy("timestamp", Query.Direction.DESCENDING)
+            .addSnapshotListener { snapshot, e ->
+                if (e != null) return@addSnapshotListener
+                snapshot?.let {
+                    val posts = it.toObjects(Post::class.java)
+                    onUpdate(posts)
+                }
+            }
+    }
+
+    suspend fun toggleLike(postId: String, userId: String): Result<Unit> {
+        return try {
+            val postRef = firestore.collection("posts").document(postId)
+            firestore.runTransaction { transaction ->
+                val snapshot = transaction.get(postRef)
+                val post = snapshot.toObject(Post::class.java) ?: return@runTransaction
+                
+                val updatedLikedBy = post.likedBy.toMutableList()
+                val newLikesCount: Int
+                
+                if (updatedLikedBy.contains(userId)) {
+                    updatedLikedBy.remove(userId)
+                    newLikesCount = (post.likesCount - 1).coerceAtLeast(0)
+                } else {
+                    updatedLikedBy.add(userId)
+                    newLikesCount = post.likesCount + 1
+                }
+                
+                transaction.update(postRef, "likedBy", updatedLikedBy)
+                transaction.update(postRef, "likesCount", newLikesCount)
+            }.await()
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    // --- Comments Functions ---
+
+    fun getCommentsRealtime(postId: String, onUpdate: (List<Comment>) -> Unit) {
+        firestore.collection("posts").document(postId).collection("comments")
+            .orderBy("timestamp", Query.Direction.ASCENDING)
+            .addSnapshotListener { snapshot, e ->
+                if (e != null) return@addSnapshotListener
+                snapshot?.let {
+                    val comments = it.toObjects(Comment::class.java)
+                    onUpdate(comments)
+                }
+            }
+    }
+
     suspend fun addComment(comment: Comment): Result<Unit> {
         return try {
-            val postRef = firestore.collection("posts").document(comment.postId)
-            val commentRef = postRef.collection("comments").document()
+            val commentRef = firestore.collection("posts")
+                .document(comment.postId)
+                .collection("comments")
+                .document()
+            
             val commentWithId = comment.copy(id = commentRef.id)
             commentRef.set(commentWithId).await()
             Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    suspend fun deleteComment(postId: String, commentId: String): Result<Unit> {
+        return try {
+            val currentUserId = auth.currentUser?.uid ?: throw Exception("Not authenticated")
+            val commentRef = firestore.collection("posts").document(postId).collection("comments").document(commentId)
+            
+            val commentSnapshot = commentRef.get().await()
+            val comment = commentSnapshot.toObject(Comment::class.java)
+            
+            if (comment?.userId == currentUserId) {
+                commentRef.delete().await()
+                Result.success(Unit)
+            } else {
+                throw Exception("Not authorized to delete this comment")
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    suspend fun updateComment(postId: String, commentId: String, newContent: String): Result<Unit> {
+        return try {
+            val currentUserId = auth.currentUser?.uid ?: throw Exception("Not authenticated")
+            val commentRef = firestore.collection("posts").document(postId).collection("comments").document(commentId)
+            
+            val commentSnapshot = commentRef.get().await()
+            val comment = commentSnapshot.toObject(Comment::class.java)
+            
+            if (comment?.userId == currentUserId) {
+                commentRef.update("content", newContent).await()
+                Result.success(Unit)
+            } else {
+                throw Exception("Not authorized to update this comment")
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    // --- Profile/Post Management ---
+
+    suspend fun deletePost(postId: String): Result<Unit> {
+        return try {
+            val currentUserId = auth.currentUser?.uid ?: throw Exception("Not authenticated")
+            val postRef = firestore.collection("posts").document(postId)
+            val snapshot = postRef.get().await()
+            val post = snapshot.toObject(Post::class.java)
+            
+            if (post?.userId == currentUserId) {
+                postRef.delete().await()
+                Result.success(Unit)
+            } else {
+                throw Exception("Unauthorized")
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    suspend fun updatePost(postId: String, newTitle: String, newContent: String): Result<Unit> {
+        return try {
+            val currentUserId = auth.currentUser?.uid ?: throw Exception("Not authenticated")
+            val postRef = firestore.collection("posts").document(postId)
+            val snapshot = postRef.get().await()
+            val post = snapshot.toObject(Post::class.java)
+            
+            if (post?.userId == currentUserId) {
+                postRef.update(mapOf("bookTitle" to newTitle, "content" to newContent)).await()
+                Result.success(Unit)
+            } else {
+                throw Exception("Unauthorized")
+            }
         } catch (e: Exception) {
             Result.failure(e)
         }
