@@ -6,7 +6,7 @@ import android.view.ViewGroup
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
-import com.bumptech.glide.Glide
+import com.squareup.picasso.Picasso
 import com.example.bookclub.databinding.ItemCommentBinding
 import com.example.bookclub.model.Comment
 
@@ -31,11 +31,14 @@ class CommentAdapter(
             binding.tvCommentText.text = comment.content
 
             // Load profile image
-            Glide.with(binding.root.context)
-                .load(comment.profileImageUrl)
-                .circleCrop()
-                .placeholder(android.R.drawable.ic_menu_gallery)
-                .into(binding.ivCommentAuthorProfile)
+            if (!comment.profileImageUrl.isNullOrEmpty()) {
+                Picasso.get()
+                    .load(comment.profileImageUrl)
+                    .placeholder(android.R.drawable.ic_menu_gallery)
+                    .into(binding.ivCommentAuthorProfile)
+            } else {
+                binding.ivCommentAuthorProfile.setImageResource(android.R.drawable.ic_menu_gallery)
+            }
 
             // Show Edit/Delete only for the owner
             if (comment.userId == currentUserId) {

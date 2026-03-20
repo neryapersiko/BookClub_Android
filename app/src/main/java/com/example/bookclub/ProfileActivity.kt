@@ -2,6 +2,7 @@ package com.example.bookclub
 
 import android.content.Intent
 import android.os.Bundle
+import android.util.Log
 import android.widget.EditText
 import android.widget.LinearLayout
 import android.widget.Toast
@@ -9,7 +10,8 @@ import androidx.activity.viewModels
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
-import com.bumptech.glide.Glide
+import com.squareup.picasso.Callback
+import com.squareup.picasso.Picasso
 import com.example.bookclub.adapter.PostAdapter
 import com.example.bookclub.databinding.ActivityProfileBinding
 import com.example.bookclub.model.Post
@@ -81,11 +83,21 @@ class ProfileActivity : AppCompatActivity() {
 
         viewModel.profileImageUrl.observe(this) { url ->
             if (!url.isNullOrEmpty()) {
-                Glide.with(this)
+                Picasso.get()
                     .load(url)
-                    .circleCrop()
                     .placeholder(android.R.drawable.ic_menu_gallery)
-                    .into(binding.ivProfileImage)
+                    .error(android.R.drawable.ic_menu_gallery)
+                    .fit()
+                    .centerCrop()
+                    .into(binding.ivProfileImage, object : Callback {
+                        override fun onSuccess() {
+                            Log.d("Picasso", "Profile image loaded successfully")
+                        }
+
+                        override fun onError(e: Exception?) {
+                            Log.e("Picasso", "Error loading profile image: ${e?.message}")
+                        }
+                    })
             }
         }
 

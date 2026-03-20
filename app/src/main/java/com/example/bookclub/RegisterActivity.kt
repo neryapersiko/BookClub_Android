@@ -8,7 +8,7 @@ import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
-import com.bumptech.glide.Glide
+import com.squareup.picasso.Picasso
 import com.example.bookclub.databinding.ActivityRegisterBinding
 import com.example.bookclub.viewmodel.RegisterViewModel
 
@@ -22,7 +22,7 @@ class RegisterActivity : AppCompatActivity() {
         uri?.let {
             selectedLocalUri = it
             binding.etImageUrl.text?.clear() // Clear URL if gallery is used
-            Glide.with(this).load(it).circleCrop().into(binding.ivProfilePreview)
+            Picasso.get().load(it).into(binding.ivProfilePreview)
         }
     }
 
@@ -31,8 +31,13 @@ class RegisterActivity : AppCompatActivity() {
         binding = ActivityRegisterBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
+        setupActionBar()
         setupListeners()
         observeViewModel()
+    }
+
+    private fun setupActionBar() {
+        // Simple ActionBar setup if needed, or use the existing toolbar if added in XML
     }
 
     private fun setupListeners() {
@@ -44,7 +49,9 @@ class RegisterActivity : AppCompatActivity() {
             val url = binding.etImageUrl.text.toString().trim()
             if (url.isNotEmpty()) {
                 selectedLocalUri = null // Clear local URI if URL is used
-                Glide.with(this).load(url).circleCrop().placeholder(android.R.drawable.ic_menu_gallery).into(binding.ivProfilePreview)
+                Picasso.get().load(url)
+                    .placeholder(android.R.drawable.ic_menu_gallery)
+                    .into(binding.ivProfilePreview)
             } else {
                 Toast.makeText(this, "Please enter a URL first", Toast.LENGTH_SHORT).show()
             }

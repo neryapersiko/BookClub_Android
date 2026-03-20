@@ -7,7 +7,7 @@ import android.view.ViewGroup
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
-import com.bumptech.glide.Glide
+import com.squareup.picasso.Picasso
 import com.example.bookclub.databinding.ItemPostBinding
 import com.example.bookclub.model.Post
 
@@ -36,11 +36,14 @@ class PostAdapter(
             binding.tvLikesCount.text = post.likesCount.toString()
 
             // Load profile image
-            Glide.with(binding.root.context)
-                .load(post.profileImageUrl)
-                .circleCrop()
-                .placeholder(android.R.drawable.ic_menu_gallery)
-                .into(binding.ivAuthorProfile)
+            if (!post.profileImageUrl.isNullOrEmpty()) {
+                Picasso.get()
+                    .load(post.profileImageUrl)
+                    .placeholder(android.R.drawable.ic_menu_gallery)
+                    .into(binding.ivAuthorProfile)
+            } else {
+                binding.ivAuthorProfile.setImageResource(android.R.drawable.ic_menu_gallery)
+            }
             
             // Show edit/delete buttons if post belongs to current user AND callbacks are provided
             if (post.userId == currentUserId && onEditClick != null && onDeleteClick != null) {

@@ -10,7 +10,7 @@ import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
-import com.bumptech.glide.Glide
+import com.squareup.picasso.Picasso
 import com.example.bookclub.databinding.ActivityEditProfileBinding
 import com.example.bookclub.viewmodel.EditProfileViewModel
 
@@ -24,7 +24,7 @@ class EditProfileActivity : AppCompatActivity() {
         uri?.let {
             selectedLocalUri = it
             binding.etEditImageUrl.setText("") // Clear URL field when gallery is used
-            Glide.with(this).load(it).circleCrop().into(binding.ivEditProfileImage)
+            Picasso.get().load(it).into(binding.ivEditProfileImage)
         }
     }
 
@@ -65,9 +65,7 @@ class EditProfileActivity : AppCompatActivity() {
                 val url = s.toString().trim()
                 if (url.isNotEmpty()) {
                     selectedLocalUri = null // Clear local URI when URL is typed
-                    Glide.with(this@EditProfileActivity)
-                        .load(url)
-                        .circleCrop()
+                    Picasso.get().load(url)
                         .placeholder(android.R.drawable.ic_menu_gallery)
                         .error(android.R.drawable.ic_menu_report_image)
                         .into(binding.ivEditProfileImage)
@@ -93,7 +91,7 @@ class EditProfileActivity : AppCompatActivity() {
             binding.etEditName.setText(data["name"])
             val imageUrl = data["profileImageUrl"]
             if (!imageUrl.isNullOrEmpty() && selectedLocalUri == null && binding.etEditImageUrl.text.isNullOrEmpty()) {
-                Glide.with(this).load(imageUrl).circleCrop()
+                Picasso.get().load(imageUrl)
                     .placeholder(android.R.drawable.ic_menu_gallery)
                     .into(binding.ivEditProfileImage)
             }
