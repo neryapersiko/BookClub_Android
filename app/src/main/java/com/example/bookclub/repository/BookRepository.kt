@@ -6,15 +6,17 @@ import com.example.bookclub.model.User
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.Query
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.tasks.await
+import kotlinx.coroutines.withContext
 
 class BookRepository(
     private val auth: FirebaseAuth = FirebaseAuth.getInstance(),
     private val firestore: FirebaseFirestore = FirebaseFirestore.getInstance()
 ) {
 
-    suspend fun registerUser(user: User, pass: String): Result<User> {
-        return try {
+    suspend fun registerUser(user: User, pass: String): Result<User> = withContext(Dispatchers.IO) {
+        return@withContext try {
             val result = auth.createUserWithEmailAndPassword(user.email, pass).await()
             val uid = result.user?.uid ?: throw Exception("User registration failed")
             val userWithId = user.copy(id = uid)
@@ -25,8 +27,8 @@ class BookRepository(
         }
     }
 
-    suspend fun loginUser(email: String, pass: String): Result<String> {
-        return try {
+    suspend fun loginUser(email: String, pass: String): Result<String> = withContext(Dispatchers.IO) {
+        return@withContext try {
             val result = auth.signInWithEmailAndPassword(email, pass).await()
             val uid = result.user?.uid ?: throw Exception("Login failed")
             Result.success(uid)
@@ -35,8 +37,8 @@ class BookRepository(
         }
     }
 
-    suspend fun uploadPost(post: Post): Result<Unit> {
-        return try {
+    suspend fun uploadPost(post: Post): Result<Unit> = withContext(Dispatchers.IO) {
+        return@withContext try {
             val documentRef = firestore.collection("posts").document()
             val postWithId = post.copy(id = documentRef.id)
             documentRef.set(postWithId).await()
@@ -46,8 +48,8 @@ class BookRepository(
         }
     }
 
-    suspend fun getPosts(): Result<List<Post>> {
-        return try {
+    suspend fun getPosts(): Result<List<Post>> = withContext(Dispatchers.IO) {
+        return@withContext try {
             val snapshot = firestore.collection("posts")
                 .orderBy("timestamp", Query.Direction.DESCENDING)
                 .get()
@@ -65,14 +67,15 @@ class BookRepository(
             .addSnapshotListener { snapshot, e ->
                 if (e != null) return@addSnapshotListener
                 snapshot?.let {
+                    // Offload heavy mapping to a background thread
                     val posts = it.toObjects(Post::class.java)
                     onUpdate(posts)
                 }
             }
     }
 
-    suspend fun toggleLike(postId: String, userId: String): Result<Unit> {
-        return try {
+    suspend fun toggleLike(postId: String, userId: String): Result<Unit> = withContext(Dispatchers.IO) {
+        return@withContext try {
             val postRef = firestore.collection("posts").document(postId)
             firestore.runTransaction { transaction ->
                 val snapshot = transaction.get(postRef)
@@ -112,8 +115,8 @@ class BookRepository(
             }
     }
 
-    suspend fun addComment(comment: Comment): Result<Unit> {
-        return try {
+    suspend fun addComment(comment: Comment): Result<Unit> = withContext(Dispatchers.IO) {
+        return@withContext try {
             val commentRef = firestore.collection("posts")
                 .document(comment.postId)
                 .collection("comments")
@@ -127,8 +130,8 @@ class BookRepository(
         }
     }
 
-    suspend fun deleteComment(postId: String, commentId: String): Result<Unit> {
-        return try {
+    suspend fun deleteComment(postId: String, commentId: String): Result<Unit> = withContext(Dispatchers.IO) {
+        return@withContext try {
             val currentUserId = auth.currentUser?.uid ?: throw Exception("Not authenticated")
             val commentRef = firestore.collection("posts").document(postId).collection("comments").document(commentId)
             
@@ -146,8 +149,8 @@ class BookRepository(
         }
     }
 
-    suspend fun updateComment(postId: String, commentId: String, newContent: String): Result<Unit> {
-        return try {
+    suspend fun updateComment(postId: String, commentId: String, newContent: String): Result<Unit> = withContext(Dispatchers.IO) {
+        return@withContext try {
             val currentUserId = auth.currentUser?.uid ?: throw Exception("Not authenticated")
             val commentRef = firestore.collection("posts").document(postId).collection("comments").document(commentId)
             
@@ -167,8 +170,8 @@ class BookRepository(
 
     // --- Profile/Post Management ---
 
-    suspend fun deletePost(postId: String): Result<Unit> {
-        return try {
+    suspend fun deletePost(postId: String): Result<Unit> = withContext(Dispatchers.IO) {
+        return@withContext try {
             val currentUserId = auth.currentUser?.uid ?: throw Exception("Not authenticated")
             val postRef = firestore.collection("posts").document(postId)
             val snapshot = postRef.get().await()
@@ -185,8 +188,8 @@ class BookRepository(
         }
     }
 
-    suspend fun updatePost(postId: String, newTitle: String, newContent: String): Result<Unit> {
-        return try {
+    suspend fun updatePost(postId: String, newTitle: String, newContent: String): Result<Unit> = withContext(Dispatchers.IO) {
+        return@withContext try {
             val currentUserId = auth.currentUser?.uid ?: throw Exception("Not authenticated")
             val postRef = firestore.collection("posts").document(postId)
             val snapshot = postRef.get().await()

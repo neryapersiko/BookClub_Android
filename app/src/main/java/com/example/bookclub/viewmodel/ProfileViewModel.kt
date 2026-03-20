@@ -9,8 +9,10 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.ListenerRegistration
 import com.google.firebase.firestore.Query
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
+import kotlinx.coroutines.withContext
 
 class ProfileViewModel : ViewModel() {
 
@@ -85,7 +87,17 @@ class ProfileViewModel : ViewModel() {
                 
                 if (snapshot != null) {
                     val postList = snapshot.toObjects(Post::class.java)
-                    _posts.value = postList
+                    // Stop update loop: Only update if the list has actually changed
+                    if (_posts.value == postList) return@addSnapshotListener
+
+                    viewModelScope.launch(Dispatchers.Default) {
+                        // Re-verify on background thread
+                        if (_posts.value == postList) return@launch
+                        
+                        withContext(Dispatchers.Main) {
+                            _posts.value = postList
+                        }
+                    }
                 }
             }
     }

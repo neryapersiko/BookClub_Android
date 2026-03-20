@@ -35,11 +35,15 @@ class PostAdapter(
             binding.tvContent.text = post.content
             binding.tvLikesCount.text = post.likesCount.toString()
 
-            // Load profile image
-            if (!post.profileImageUrl.isNullOrEmpty()) {
+            // Load profile image - optimized with mandatory resize to prevent Large Bitmap crash
+            val imageUrl = if (!post.profileImageUrl.isNullOrEmpty()) post.profileImageUrl else post.userImageUrl
+            if (!imageUrl.isNullOrEmpty()) {
                 Picasso.get()
-                    .load(post.profileImageUrl)
+                    .load(imageUrl)
                     .placeholder(android.R.drawable.ic_menu_gallery)
+                    .resize(500, 500)
+                    .centerCrop()
+                    .onlyScaleDown()
                     .into(binding.ivAuthorProfile)
             } else {
                 binding.ivAuthorProfile.setImageResource(android.R.drawable.ic_menu_gallery)
@@ -55,7 +59,7 @@ class PostAdapter(
             }
 
             // Highlight like button if user already liked the post
-            val isLiked = currentUserId != null && post.likedBy.contains(currentUserId)
+            val isLiked = currentUserId != null && (post.likedBy.contains(currentUserId) || post.likes?.contains(currentUserId) == true)
             if (isLiked) {
                 binding.btnLike.setIconTintResource(android.R.color.holo_red_dark)
                 binding.btnLike.setTextColor(Color.RED)

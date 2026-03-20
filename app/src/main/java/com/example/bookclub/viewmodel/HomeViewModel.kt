@@ -6,7 +6,9 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.bookclub.model.Post
 import com.example.bookclub.repository.BookRepository
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 class HomeViewModel(private val repository: BookRepository) : ViewModel() {
 
@@ -15,7 +17,17 @@ class HomeViewModel(private val repository: BookRepository) : ViewModel() {
 
     init {
         repository.getPostsRealtime { postList ->
-            _posts.value = postList
+            // Prevent redundant updates that block the Main Thread and overload Picasso
+            if (_posts.value == postList) return@getPostsRealtime
+
+            viewModelScope.launch(Dispatchers.Default) {
+                // Background processing: double-check equality after thread switch
+                if (_posts.value == postList) return@launch
+                
+                withContext(Dispatchers.Main) {
+                    _posts.value = postList
+                }
+            }
         }
     }
 
