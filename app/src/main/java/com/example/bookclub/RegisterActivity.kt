@@ -21,7 +21,6 @@ class RegisterActivity : AppCompatActivity() {
     private val galleryLauncher = registerForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
         uri?.let {
             selectedLocalUri = it
-            binding.etImageUrl.text?.clear() // Clear URL if gallery is used
             Picasso.get().load(it).into(binding.ivProfilePreview)
         }
     }
@@ -37,7 +36,7 @@ class RegisterActivity : AppCompatActivity() {
     }
 
     private fun setupActionBar() {
-        // Simple ActionBar setup if needed, or use the existing toolbar if added in XML
+        // Simple ActionBar setup if needed
     }
 
     private fun setupListeners() {
@@ -45,30 +44,18 @@ class RegisterActivity : AppCompatActivity() {
             galleryLauncher.launch("image/*")
         }
 
-        binding.btnPreviewUrl.setOnClickListener {
-            val url = binding.etImageUrl.text.toString().trim()
-            if (url.isNotEmpty()) {
-                selectedLocalUri = null // Clear local URI if URL is used
-                Picasso.get().load(url)
-                    .placeholder(android.R.drawable.ic_menu_gallery)
-                    .into(binding.ivProfilePreview)
-            } else {
-                Toast.makeText(this, "Please enter a URL first", Toast.LENGTH_SHORT).show()
-            }
-        }
-
         binding.btnRegister.setOnClickListener {
             val name = binding.etName.text.toString().trim()
             val email = binding.etEmail.text.toString().trim()
             val password = binding.etPassword.text.toString().trim()
-            val webUrl = binding.etImageUrl.text.toString().trim()
 
             if (name.isEmpty() || email.isEmpty() || password.isEmpty()) {
                 Toast.makeText(this, "Please fill in all fields", Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
 
-            viewModel.registerUser(name, email, password, selectedLocalUri, webUrl.ifEmpty { null })
+            // Updated to pass only registration details and the local Uri
+            viewModel.registerUser(name, email, password, selectedLocalUri)
         }
 
         binding.tvLogin.setOnClickListener {

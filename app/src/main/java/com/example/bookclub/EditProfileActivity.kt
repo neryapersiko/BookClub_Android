@@ -1,10 +1,7 @@
 package com.example.bookclub
 
-import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
-import android.text.Editable
-import android.text.TextWatcher
 import android.view.View
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
@@ -13,17 +10,19 @@ import androidx.appcompat.app.AppCompatActivity
 import com.squareup.picasso.Picasso
 import com.example.bookclub.databinding.ActivityEditProfileBinding
 import com.example.bookclub.viewmodel.EditProfileViewModel
+import com.example.bookclub.viewmodel.EditProfileViewModelFactory
 
 class EditProfileActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityEditProfileBinding
-    private val viewModel: EditProfileViewModel by viewModels()
+    private val viewModel: EditProfileViewModel by viewModels {
+        EditProfileViewModelFactory(this)
+    }
     private var selectedLocalUri: Uri? = null
 
     private val galleryLauncher = registerForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
         uri?.let {
             selectedLocalUri = it
-            binding.etEditImageUrl.setText("") // Clear URL field when gallery is used
             Picasso.get().load(it).into(binding.ivEditProfileImage)
         }
     }
@@ -57,32 +56,16 @@ class EditProfileActivity : AppCompatActivity() {
         binding.ivEditProfileImage.setOnClickListener { galleryLauncher.launch("image/*") }
         binding.btnChangeImage.setOnClickListener { galleryLauncher.launch("image/*") }
 
-        // Auto-preview for URL
-        binding.etEditImageUrl.addTextChangedListener(object : TextWatcher {
-            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
-            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
-            override fun afterTextChanged(s: Editable?) {
-                val url = s.toString().trim()
-                if (url.isNotEmpty()) {
-                    selectedLocalUri = null // Clear local URI when URL is typed
-                    Picasso.get().load(url)
-                        .placeholder(android.R.drawable.ic_menu_gallery)
-                        .error(android.R.drawable.ic_menu_report_image)
-                        .into(binding.ivEditProfileImage)
-                }
-            }
-        })
-
         binding.btnSaveProfile.setOnClickListener {
             val name = binding.etEditName.text.toString().trim()
-            val webUrl = binding.etEditImageUrl.text.toString().trim()
 
             if (name.isEmpty()) {
                 Toast.makeText(this, "Name cannot be empty", Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
 
-            viewModel.updateProfile(name, selectedLocalUri, webUrl.ifEmpty { null })
+            // Fixed: Now matches the 2-parameter signature (name, localUri)
+            viewModel.updateProfile(name, selectedLocalUri)
         }
     }
 
@@ -90,7 +73,7 @@ class EditProfileActivity : AppCompatActivity() {
         viewModel.userData.observe(this) { data ->
             binding.etEditName.setText(data["name"])
             val imageUrl = data["profileImageUrl"]
-            if (!imageUrl.isNullOrEmpty() && selectedLocalUri == null && binding.etEditImageUrl.text.isNullOrEmpty()) {
+            if (!imageUrl.isNullOrEmpty() && selectedLocalUri == null) {
                 Picasso.get().load(imageUrl)
                     .placeholder(android.R.drawable.ic_menu_gallery)
                     .into(binding.ivEditProfileImage)

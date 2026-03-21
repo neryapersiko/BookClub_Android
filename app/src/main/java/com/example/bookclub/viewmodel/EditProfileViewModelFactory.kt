@@ -6,13 +6,13 @@ import androidx.lifecycle.ViewModelProvider
 import com.example.bookclub.database.AppDatabase
 import com.example.bookclub.repository.BookRepository
 
-class HomeViewModelFactory(private val context: Context) : ViewModelProvider.Factory {
+class EditProfileViewModelFactory(private val context: Context) : ViewModelProvider.Factory {
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
-        if (modelClass.isAssignableFrom(HomeViewModel::class.java)) {
+        if (modelClass.isAssignableFrom(EditProfileViewModel::class.java)) {
             val database = AppDatabase.getDatabase(context)
             val repository = BookRepository(database.postDao())
             @Suppress("UNCHECKED_CAST")
-            return HomeViewModel(repository) as T
+            return EditProfileViewModel(repository) as T
         }
         throw IllegalArgumentException("Unknown ViewModel class")
     }

@@ -8,10 +8,12 @@ import androidx.activity.viewModels
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import com.example.bookclub.adapter.CommentAdapter
+import com.example.bookclub.database.AppDatabase
 import com.example.bookclub.databinding.ActivityCommentsBinding
 import com.example.bookclub.repository.BookRepository
 import com.example.bookclub.viewmodel.CommentsViewModel
 import com.example.bookclub.viewmodel.CommentsViewModelFactory
+import com.squareup.picasso.Picasso
 
 class CommentsActivity : AppCompatActivity() {
 
@@ -20,7 +22,8 @@ class CommentsActivity : AppCompatActivity() {
     
     private val viewModel: CommentsViewModel by viewModels {
         val postId = intent.getStringExtra("POST_ID") ?: ""
-        CommentsViewModelFactory(BookRepository(), postId)
+        val database = AppDatabase.getDatabase(this)
+        CommentsViewModelFactory(BookRepository(database.postDao()), postId)
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -36,7 +39,6 @@ class CommentsActivity : AppCompatActivity() {
     }
 
     private fun setupActionBar() {
-        // Set the toolbar as the action bar for this activity
         setSupportActionBar(binding.toolbar)
         
         supportActionBar?.apply {
@@ -47,7 +49,6 @@ class CommentsActivity : AppCompatActivity() {
     }
 
     override fun onSupportNavigateUp(): Boolean {
-        // Handle the back arrow click in the toolbar
         onBackPressedDispatcher.onBackPressed()
         return true
     }
@@ -56,10 +57,22 @@ class CommentsActivity : AppCompatActivity() {
         val userName = intent.getStringExtra("USER_NAME") ?: "Anonymous User"
         val bookTitle = intent.getStringExtra("BOOK_TITLE") ?: "No Title"
         val content = intent.getStringExtra("CONTENT") ?: ""
+        val userImageUrl = intent.getStringExtra("USER_IMAGE_URL") ?: ""
 
-        binding.tvHeaderUserName.text = "Posted by: $userName"
         binding.tvHeaderBookTitle.text = bookTitle
         binding.tvHeaderContent.text = content
+
+        if (userImageUrl.isNotEmpty()) {
+            Picasso.get()
+                .load(userImageUrl)
+                .placeholder(android.R.drawable.ic_menu_gallery)
+                .error(android.R.drawable.stat_notify_error)
+                .resize(120, 120)
+                .centerCrop()
+                .into(binding.ivHeaderProfile)
+        } else {
+            binding.ivHeaderProfile.setImageResource(android.R.drawable.ic_menu_gallery)
+        }
     }
 
     private fun setupRecyclerView() {

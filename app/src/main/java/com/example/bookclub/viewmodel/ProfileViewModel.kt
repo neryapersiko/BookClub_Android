@@ -34,14 +34,20 @@ class ProfileViewModel : ViewModel() {
     private var postsListener: ListenerRegistration? = null
 
     init {
-        fetchUserData()
+        refreshUserData()
         listenToMyPosts()
     }
 
-    private fun fetchUserData() {
+    /**
+     * Triggers a fresh fetch of user data from Firestore/Room.
+     * Called on init and when the fragment resumes to ensure the UI is up-to-date.
+     */
+    fun refreshUserData() {
         val uid = auth.currentUser?.uid ?: return
         viewModelScope.launch {
             try {
+                // Fetching from Firestore directly ensures we bypass any local delay, 
+                // and the repository will handle syncing Room in the background.
                 val document = firestore.collection("users").document(uid).get().await()
                 if (document.exists()) {
                     _userName.value = document.getString("name") ?: "No Name"
@@ -87,11 +93,9 @@ class ProfileViewModel : ViewModel() {
                 
                 if (snapshot != null) {
                     val postList = snapshot.toObjects(Post::class.java)
-                    // Stop update loop: Only update if the list has actually changed
                     if (_posts.value == postList) return@addSnapshotListener
 
                     viewModelScope.launch(Dispatchers.Default) {
-                        // Re-verify on background thread
                         if (_posts.value == postList) return@launch
                         
                         withContext(Dispatchers.Main) {

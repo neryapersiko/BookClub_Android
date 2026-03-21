@@ -25,7 +25,7 @@ class HomeFragment : Fragment() {
     private val auth = FirebaseAuth.getInstance()
     
     private val viewModel: HomeViewModel by viewModels {
-        HomeViewModelFactory(BookRepository())
+        HomeViewModelFactory(requireContext())
     }
 
     override fun onCreateView(
@@ -40,17 +40,24 @@ class HomeFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        // Check for auth (preserving MainActivity's logic)
+        // Ensure we handle authentication before setting up the UI
         if (auth.currentUser == null) {
-            val intent = Intent(requireContext(), LoginActivity::class.java)
-            startActivity(intent)
-            requireActivity().finish()
+            navigateToLogin()
             return
         }
 
         setupRecyclerView()
         setupListeners()
         observeViewModel()
+    }
+
+    private fun navigateToLogin() {
+        // Use the Intent for Activity-based Login if that's your structure,
+        // or use NavController if you're using Fragments.
+        val intent = Intent(requireContext(), LoginActivity::class.java)
+        intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+        startActivity(intent)
+        requireActivity().finish()
     }
 
     private fun setupRecyclerView() {
@@ -68,15 +75,18 @@ class HomeFragment : Fragment() {
                 intent.putExtra("USER_NAME", post.userName)
                 intent.putExtra("BOOK_TITLE", post.bookTitle)
                 intent.putExtra("CONTENT", post.content)
+                
+                // Pass the profile image URL to CommentsActivity
+                val imageUrl = post.profileImageUrl.ifEmpty { post.userImageUrl }
+                intent.putExtra("USER_IMAGE_URL", imageUrl)
+                
                 startActivity(intent)
             }
         )
         binding.rvPosts.apply {
             adapter = postAdapter
             layoutManager = LinearLayoutManager(requireContext())
-            // Optimization for memory and performance
             setHasFixedSize(true)
-            setItemViewCacheSize(10)
         }
     }
 
@@ -94,14 +104,13 @@ class HomeFragment : Fragment() {
 
         binding.btnLogout.setOnClickListener {
             auth.signOut()
-            val intent = Intent(requireContext(), LoginActivity::class.java)
-            startActivity(intent)
-            requireActivity().finish()
+            navigateToLogin()
         }
     }
 
     private fun observeViewModel() {
         viewModel.posts.observe(viewLifecycleOwner) { posts ->
+            // If posts are empty, this might be why you see a "white screen" (empty list)
             postAdapter.submitList(posts)
         }
     }

@@ -7,6 +7,7 @@ import android.widget.Toast
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
+import com.example.bookclub.database.AppDatabase
 import com.example.bookclub.databinding.ActivityLoginBinding
 import com.example.bookclub.repository.BookRepository
 import com.example.bookclub.viewmodel.AuthViewModel
@@ -17,7 +18,8 @@ class LoginActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityLoginBinding
     private val viewModel: AuthViewModel by viewModels {
-        AuthViewModelFactory(BookRepository())
+        val database = AppDatabase.getDatabase(this)
+        AuthViewModelFactory(BookRepository(database.postDao()))
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {

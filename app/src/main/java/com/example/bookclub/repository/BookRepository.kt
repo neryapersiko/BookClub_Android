@@ -1,27 +1,78 @@
 package com.example.bookclub.repository
 
+import androidx.lifecycle.LiveData
+import com.example.bookclub.database.PostDao
 import com.example.bookclub.model.Comment
 import com.example.bookclub.model.Post
 import com.example.bookclub.model.User
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.Query
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.withTimeoutOrNull
 
 class BookRepository(
+    private val postDao: PostDao,
     private val auth: FirebaseAuth = FirebaseAuth.getInstance(),
     private val firestore: FirebaseFirestore = FirebaseFirestore.getInstance()
 ) {
 
+    /**
+     * Returns LiveData from Room. This is the Single Source of Truth for the UI.
+     */
+    fun getAllPosts(): LiveData<List<Post>> {
+        return postDao.getAllPosts()
+    }
+
+    /**
+     * Manually updates the local Room database for the current user's profile image.
+     * This forces the Room LiveData to emit a new value immediately.
+     */
+    fun updateLocalUserProfile(newImageUrl: String) {
+        val uid = auth.currentUser?.uid ?: return
+        CoroutineScope(Dispatchers.IO).launch {
+            postDao.updateProfileImageForUser(uid, newImageUrl)
+            
+            // To ensure Room triggers a re-emission if the update above isn't enough,
+            // we could potentially re-insert or touch the table, but the UPDATE query 
+            // on an observed table should be sufficient for Room to notify observers.
+        }
+    }
+
+    /**
+     * Listens to Firestore in realtime and syncs the data into the Room database.
+     */
+    fun startRealtimeSync() {
+        firestore.collection("posts")
+            .orderBy("timestamp", Query.Direction.DESCENDING)
+            .addSnapshotListener { snapshot, e ->
+                if (e != null) return@addSnapshotListener
+                
+                CoroutineScope(Dispatchers.IO).launch {
+                    snapshot?.let {
+                        val posts = it.toObjects(Post::class.java)
+                        // Using a transaction-like approach: delete then insert.
+                        // Room will notify observers once the operations are complete.
+                        postDao.deleteAllPosts()
+                        postDao.insertPosts(posts)
+                    }
+                }
+            }
+    }
+
     suspend fun registerUser(user: User, pass: String): Result<User> = withContext(Dispatchers.IO) {
         return@withContext try {
-            val result = auth.createUserWithEmailAndPassword(user.email, pass).await()
-            val uid = result.user?.uid ?: throw Exception("User registration failed")
-            val userWithId = user.copy(id = uid)
-            firestore.collection("users").document(uid).set(userWithId).await()
-            Result.success(userWithId)
+            withTimeoutOrNull(5000) {
+                val result = auth.createUserWithEmailAndPassword(user.email, pass).await()
+                val uid = result.user?.uid ?: throw Exception("User registration failed")
+                val userWithId = user.copy(id = uid)
+                firestore.collection("users").document(uid).set(userWithId).await()
+                Result.success(userWithId)
+            } ?: Result.failure(Exception("Operation timed out. Check your connection."))
         } catch (e: Exception) {
             Result.failure(e)
         }
@@ -29,9 +80,11 @@ class BookRepository(
 
     suspend fun loginUser(email: String, pass: String): Result<String> = withContext(Dispatchers.IO) {
         return@withContext try {
-            val result = auth.signInWithEmailAndPassword(email, pass).await()
-            val uid = result.user?.uid ?: throw Exception("Login failed")
-            Result.success(uid)
+            withTimeoutOrNull(5000) {
+                val result = auth.signInWithEmailAndPassword(email, pass).await()
+                val uid = result.user?.uid ?: throw Exception("Login failed")
+                Result.success(uid)
+            } ?: Result.failure(Exception("Login timed out. Check your connection."))
         } catch (e: Exception) {
             Result.failure(e)
         }
@@ -46,32 +99,6 @@ class BookRepository(
         } catch (e: Exception) {
             Result.failure(e)
         }
-    }
-
-    suspend fun getPosts(): Result<List<Post>> = withContext(Dispatchers.IO) {
-        return@withContext try {
-            val snapshot = firestore.collection("posts")
-                .orderBy("timestamp", Query.Direction.DESCENDING)
-                .get()
-                .await()
-            val posts = snapshot.toObjects(Post::class.java)
-            Result.success(posts)
-        } catch (e: Exception) {
-            Result.failure(e)
-        }
-    }
-
-    fun getPostsRealtime(onUpdate: (List<Post>) -> Unit) {
-        firestore.collection("posts")
-            .orderBy("timestamp", Query.Direction.DESCENDING)
-            .addSnapshotListener { snapshot, e ->
-                if (e != null) return@addSnapshotListener
-                snapshot?.let {
-                    // Offload heavy mapping to a background thread
-                    val posts = it.toObjects(Post::class.java)
-                    onUpdate(posts)
-                }
-            }
     }
 
     suspend fun toggleLike(postId: String, userId: String): Result<Unit> = withContext(Dispatchers.IO) {

@@ -5,13 +5,14 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.bookclub.repository.BookRepository
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.storage.FirebaseStorage
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 
-class EditProfileViewModel : ViewModel() {
+class EditProfileViewModel(private val repository: BookRepository) : ViewModel() {
 
     private val auth = FirebaseAuth.getInstance()
     private val firestore = FirebaseFirestore.getInstance()
@@ -48,22 +49,34 @@ class EditProfileViewModel : ViewModel() {
         }
     }
 
-    fun updateProfile(newName: String, newLocalUri: Uri?, newWebUrl: String?) {
+    fun updateProfile(newName: String, newLocalUri: Uri?) {
         val uid = auth.currentUser?.uid ?: return
         _isLoading.value = true
         
         viewModelScope.launch {
             try {
                 val updates = mutableMapOf<String, Any>("name" to newName)
+                var currentImageUrl = _userData.value?.get("profileImageUrl")
                 
                 if (newLocalUri != null) {
                     val uploadedUrl = uploadImage(uid, newLocalUri)
                     updates["profileImageUrl"] = uploadedUrl
-                } else if (!newWebUrl.isNullOrEmpty()) {
-                    updates["profileImageUrl"] = newWebUrl
+                    currentImageUrl = uploadedUrl
                 }
 
+                // Manually update local LiveData for instant UI response
+                _userData.value = mapOf(
+                    "name" to newName,
+                    "profileImageUrl" to currentImageUrl
+                )
+
                 firestore.collection("users").document(uid).update(updates).await()
+                
+                // CRITICAL: Update local Room database immediately
+                currentImageUrl?.let {
+                    repository.updateLocalUserProfile(it)
+                }
+                
                 _updateResult.value = Result.success(Unit)
             } catch (e: Exception) {
                 _updateResult.value = Result.failure(e)
@@ -74,7 +87,6 @@ class EditProfileViewModel : ViewModel() {
     }
 
     private suspend fun uploadImage(uid: String, uri: Uri): String {
-        // Using timestamp to avoid cache issues as requested
         val ref = storage.reference.child("profile_images/${uid}_${System.currentTimeMillis()}.jpg")
         ref.putFile(uri).await()
         return ref.downloadUrl.await().toString()

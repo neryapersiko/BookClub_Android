@@ -35,21 +35,38 @@ class PostAdapter(
             binding.tvContent.text = post.content
             binding.tvLikesCount.text = post.likesCount.toString()
 
-            // Load profile image - optimized with mandatory resize to prevent Large Bitmap crash
-            val imageUrl = if (!post.profileImageUrl.isNullOrEmpty()) post.profileImageUrl else post.userImageUrl
-            if (!imageUrl.isNullOrEmpty()) {
+            // Safe image URL selection
+            val imageUrl = post.profileImageUrl.ifEmpty { post.userImageUrl }
+            
+            if (imageUrl.isNotEmpty()) {
+                // Attempt to load from Network/Cache normally
                 Picasso.get()
                     .load(imageUrl)
                     .placeholder(android.R.drawable.ic_menu_gallery)
-                    .resize(500, 500)
+                    .error(android.R.drawable.stat_notify_error)
+                    .resize(120, 120)
                     .centerCrop()
                     .onlyScaleDown()
-                    .into(binding.ivAuthorProfile)
+                    .into(binding.ivAuthorProfile, object : com.squareup.picasso.Callback {
+                        override fun onSuccess() {
+                            // Image loaded successfully
+                        }
+
+                        override fun onError(e: Exception?) {
+                            // If network load fails, try loading strictly from local cache
+                            Picasso.get()
+                                .load(imageUrl)
+                                .networkPolicy(com.squareup.picasso.NetworkPolicy.OFFLINE)
+                                .placeholder(android.R.drawable.ic_menu_gallery)
+                                .resize(120, 120)
+                                .centerCrop()
+                                .into(binding.ivAuthorProfile)
+                        }
+                    })
             } else {
                 binding.ivAuthorProfile.setImageResource(android.R.drawable.ic_menu_gallery)
             }
             
-            // Show edit/delete buttons if post belongs to current user AND callbacks are provided
             if (post.userId == currentUserId && onEditClick != null && onDeleteClick != null) {
                 binding.layoutPostActions.visibility = View.VISIBLE
                 binding.btnEditPost.setOnClickListener { onEditClick.invoke(post) }
@@ -58,7 +75,6 @@ class PostAdapter(
                 binding.layoutPostActions.visibility = View.GONE
             }
 
-            // Highlight like button if user already liked the post
             val isLiked = currentUserId != null && (post.likedBy.contains(currentUserId) || post.likes?.contains(currentUserId) == true)
             if (isLiked) {
                 binding.btnLike.setIconTintResource(android.R.color.holo_red_dark)
@@ -68,18 +84,9 @@ class PostAdapter(
                 binding.btnLike.setTextColor(Color.BLACK)
             }
 
-            binding.btnLike.setOnClickListener {
-                onLikeClick(post)
-            }
-            
-            binding.btnComment.setOnClickListener {
-                onCommentClick(post)
-            }
-
-            // Also trigger comment navigation when clicking the card itself
-            binding.root.setOnClickListener {
-                onCommentClick(post)
-            }
+            binding.btnLike.setOnClickListener { onLikeClick(post) }
+            binding.btnComment.setOnClickListener { onCommentClick(post) }
+            binding.root.setOnClickListener { onCommentClick(post) }
         }
     }
 

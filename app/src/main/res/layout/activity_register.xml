@@ -54,34 +54,6 @@
                 app:layout_constraintTop_toBottomOf="@id/ivProfilePreview" />
 
             <com.google.android.material.textfield.TextInputLayout
-                android:id="@+id/tilImageUrl"
-                style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                android:hint="Or Paste Image URL"
-                app:layout_constraintEnd_toStartOf="@+id/btnPreviewUrl"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toBottomOf="@id/btnGallery">
-
-                <com.google.android.material.textfield.TextInputEditText
-                    android:id="@+id/etImageUrl"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:inputType="textUri" />
-            </com.google.android.material.textfield.TextInputLayout>
-
-            <Button
-                android:id="@+id/btnPreviewUrl"
-                style="@style/Widget.MaterialComponents.Button.TextButton"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Preview"
-                app:layout_constraintBottom_toBottomOf="@id/tilImageUrl"
-                app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintTop_toTopOf="@id/tilImageUrl" />
-
-            <com.google.android.material.textfield.TextInputLayout
                 android:id="@+id/tilName"
                 style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
                 android:layout_width="0dp"
@@ -90,7 +62,7 @@
                 android:hint="Full Name"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toBottomOf="@id/tilImageUrl">
+                app:layout_constraintTop_toBottomOf="@id/btnGallery">
 
                 <com.google.android.material.textfield.TextInputEditText
                     android:id="@+id/etName"

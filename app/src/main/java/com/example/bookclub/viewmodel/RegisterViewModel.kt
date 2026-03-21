@@ -23,12 +23,11 @@ class RegisterViewModel : ViewModel() {
     private val _isLoading = MutableLiveData<Boolean>()
     val isLoading: LiveData<Boolean> = _isLoading
 
-    fun registerUser(name: String, email: String, pass: String, localUri: Uri?, webUrl: String?) {
-        if (localUri == null && webUrl.isNullOrEmpty()) {
-            _registrationStatus.value = Result.failure(Exception("Please provide a profile image"))
-            return
-        }
-
+    /**
+     * Registers a user with email/password and an optional local image URI.
+     * Signature updated to remove external URL support.
+     */
+    fun registerUser(name: String, email: String, pass: String, localUri: Uri?) {
         _isLoading.value = true
         viewModelScope.launch {
             try {
@@ -36,15 +35,16 @@ class RegisterViewModel : ViewModel() {
                 val authResult = auth.createUserWithEmailAndPassword(email, pass).await()
                 val uid = authResult.user?.uid ?: throw Exception("User creation failed")
 
-                // 2. Determine Profile Image URL
+                // 2. Upload Image if provided, otherwise use an empty string or a default
                 val finalImageUrl = if (localUri != null) {
                     uploadImage(uid, localUri)
                 } else {
-                    webUrl!!
+                    "" // Or a specific default placeholder URL
                 }
 
-                // 3. Save to Firestore
+                // 3. Save User Data to Firestore
                 val userMap = mapOf(
+                    "id" to uid,
                     "name" to name,
                     "email" to email,
                     "profileImageUrl" to finalImageUrl
@@ -61,7 +61,8 @@ class RegisterViewModel : ViewModel() {
     }
 
     private suspend fun uploadImage(uid: String, uri: Uri): String {
-        val ref = storage.reference.child("profile_images/$uid.jpg")
+        // Use unique filename with timestamp to avoid cache issues
+        val ref = storage.reference.child("profile_images/${uid}_${System.currentTimeMillis()}.jpg")
         ref.putFile(uri).await()
         return ref.downloadUrl.await().toString()
     }

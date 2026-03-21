@@ -14,6 +14,8 @@ import androidx.fragment.app.viewModels
 import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.squareup.picasso.Callback
+import com.squareup.picasso.MemoryPolicy
+import com.squareup.picasso.NetworkPolicy
 import com.squareup.picasso.Picasso
 import com.example.bookclub.adapter.PostAdapter
 import com.example.bookclub.databinding.FragmentProfileBinding
@@ -45,6 +47,15 @@ class ProfileFragment : Fragment() {
         observeViewModel()
     }
 
+    /**
+     * Called when the fragment is visible again (e.g., returning from EditProfileFragment).
+     * We force a data refresh to ensure the UI catches any changes immediately.
+     */
+    override fun onResume() {
+        super.onResume()
+        viewModel.refreshUserData()
+    }
+
     private fun setupRecyclerView() {
         postAdapter = PostAdapter(
             currentUserId = viewModel.getCurrentUserId(),
@@ -55,6 +66,10 @@ class ProfileFragment : Fragment() {
                 intent.putExtra("USER_NAME", post.userName)
                 intent.putExtra("BOOK_TITLE", post.bookTitle)
                 intent.putExtra("CONTENT", post.content)
+                
+                val imageUrl = post.profileImageUrl.ifEmpty { post.userImageUrl }
+                intent.putExtra("USER_IMAGE_URL", imageUrl)
+                
                 startActivity(intent)
             },
             onEditClick = { post -> showEditDialog(post) },
@@ -63,7 +78,6 @@ class ProfileFragment : Fragment() {
         binding.rvMyPosts.apply {
             adapter = postAdapter
             layoutManager = LinearLayoutManager(requireContext())
-            // Optimization for memory and performance
             setHasFixedSize(true)
             setItemViewCacheSize(10)
         }
@@ -86,29 +100,36 @@ class ProfileFragment : Fragment() {
 
         viewModel.profileImageUrl.observe(viewLifecycleOwner) { url ->
             if (!url.isNullOrEmpty()) {
-                Picasso.get()
-                    .load(url)
-                    .placeholder(android.R.drawable.ic_menu_gallery)
-                    .error(android.R.drawable.ic_menu_gallery)
-                    // Mandatory resize to prevent "Large Bitmap" crash
-                    .resize(500, 500)
-                    .centerCrop()
-                    .onlyScaleDown()
-                    .into(binding.ivProfileImage, object : Callback {
-                        override fun onSuccess() {
-                            Log.d("Picasso", "Profile image loaded successfully")
-                        }
-
-                        override fun onError(e: Exception?) {
-                            Log.e("Picasso", "Error loading profile image: ${e?.message}")
-                        }
-                    })
+                loadProfileImage(url)
             }
         }
 
         viewModel.posts.observe(viewLifecycleOwner) { posts ->
             postAdapter.submitList(posts)
         }
+    }
+
+    private fun loadProfileImage(url: String) {
+        // Force refresh by bypassing all caches and invalidating the URL
+        Picasso.get().invalidate(url)
+        Picasso.get()
+            .load(url)
+            .memoryPolicy(MemoryPolicy.NO_CACHE, MemoryPolicy.NO_STORE)
+            .networkPolicy(NetworkPolicy.NO_CACHE)
+            .placeholder(android.R.drawable.ic_menu_gallery)
+            .error(android.R.drawable.ic_menu_gallery)
+            .resize(500, 500)
+            .centerCrop()
+            .onlyScaleDown()
+            .into(binding.ivProfileImage, object : Callback {
+                override fun onSuccess() {
+                    Log.d("Picasso", "Profile image refreshed successfully")
+                }
+
+                override fun onError(e: Exception?) {
+                    Log.e("Picasso", "Error refreshing profile image: ${e?.message}")
+                }
+            })
     }
 
     private fun showDeleteConfirmation(postId: String) {
