@@ -1,6 +1,5 @@
 package com.example.bookclub
 
-import android.content.Intent
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -11,7 +10,6 @@ import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.bookclub.adapter.PostAdapter
 import com.example.bookclub.databinding.FragmentHomeBinding
-import com.example.bookclub.repository.BookRepository
 import com.example.bookclub.viewmodel.HomeViewModel
 import com.example.bookclub.viewmodel.HomeViewModelFactory
 import com.google.firebase.auth.FirebaseAuth
@@ -52,12 +50,7 @@ class HomeFragment : Fragment() {
     }
 
     private fun navigateToLogin() {
-        // Use the Intent for Activity-based Login if that's your structure,
-        // or use NavController if you're using Fragments.
-        val intent = Intent(requireContext(), LoginActivity::class.java)
-        intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
-        startActivity(intent)
-        requireActivity().finish()
+        findNavController().navigate(R.id.action_homeFragment_to_loginFragment)
     }
 
     private fun setupRecyclerView() {
@@ -70,17 +63,15 @@ class HomeFragment : Fragment() {
                 }
             },
             onCommentClick = { post ->
-                val intent = Intent(requireContext(), CommentsActivity::class.java)
-                intent.putExtra("POST_ID", post.id)
-                intent.putExtra("USER_NAME", post.userName)
-                intent.putExtra("BOOK_TITLE", post.bookTitle)
-                intent.putExtra("CONTENT", post.content)
-                
-                // Pass the profile image URL to CommentsActivity
                 val imageUrl = post.profileImageUrl.ifEmpty { post.userImageUrl }
-                intent.putExtra("USER_IMAGE_URL", imageUrl)
-                
-                startActivity(intent)
+                val action = HomeFragmentDirections.actionHomeFragmentToCommentsFragment(
+                    postId = post.id,
+                    userName = post.userName,
+                    bookTitle = post.bookTitle,
+                    content = post.content,
+                    userImageUrl = imageUrl
+                )
+                findNavController().navigate(action)
             }
         )
         binding.rvPosts.apply {
@@ -92,8 +83,7 @@ class HomeFragment : Fragment() {
 
     private fun setupListeners() {
         binding.btnAddPost.setOnClickListener {
-            val intent = Intent(requireContext(), AddPostActivity::class.java)
-            startActivity(intent)
+            findNavController().navigate(R.id.action_homeFragment_to_addPostFragment)
         }
 
         binding.btnProfile.setOnClickListener {
@@ -110,7 +100,6 @@ class HomeFragment : Fragment() {
 
     private fun observeViewModel() {
         viewModel.posts.observe(viewLifecycleOwner) { posts ->
-            // If posts are empty, this might be why you see a "white screen" (empty list)
             postAdapter.submitList(posts)
         }
     }

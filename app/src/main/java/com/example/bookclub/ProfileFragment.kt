@@ -1,6 +1,5 @@
 package com.example.bookclub
 
-import android.content.Intent
 import android.os.Bundle
 import android.util.Log
 import android.view.LayoutInflater
@@ -13,14 +12,14 @@ import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
-import com.squareup.picasso.Callback
-import com.squareup.picasso.MemoryPolicy
-import com.squareup.picasso.NetworkPolicy
-import com.squareup.picasso.Picasso
 import com.example.bookclub.adapter.PostAdapter
 import com.example.bookclub.databinding.FragmentProfileBinding
 import com.example.bookclub.model.Post
 import com.example.bookclub.viewmodel.ProfileViewModel
+import com.squareup.picasso.Callback
+import com.squareup.picasso.MemoryPolicy
+import com.squareup.picasso.NetworkPolicy
+import com.squareup.picasso.Picasso
 
 class ProfileFragment : Fragment() {
 
@@ -47,10 +46,6 @@ class ProfileFragment : Fragment() {
         observeViewModel()
     }
 
-    /**
-     * Called when the fragment is visible again (e.g., returning from EditProfileFragment).
-     * We force a data refresh to ensure the UI catches any changes immediately.
-     */
     override fun onResume() {
         super.onResume()
         viewModel.refreshUserData()
@@ -61,16 +56,15 @@ class ProfileFragment : Fragment() {
             currentUserId = viewModel.getCurrentUserId(),
             onLikeClick = { /* Already handled if needed */ },
             onCommentClick = { post ->
-                val intent = Intent(requireContext(), CommentsActivity::class.java)
-                intent.putExtra("POST_ID", post.id)
-                intent.putExtra("USER_NAME", post.userName)
-                intent.putExtra("BOOK_TITLE", post.bookTitle)
-                intent.putExtra("CONTENT", post.content)
-                
                 val imageUrl = post.profileImageUrl.ifEmpty { post.userImageUrl }
-                intent.putExtra("USER_IMAGE_URL", imageUrl)
-                
-                startActivity(intent)
+                val action = ProfileFragmentDirections.actionProfileFragmentToCommentsFragment(
+                    postId = post.id,
+                    userName = post.userName,
+                    bookTitle = post.bookTitle,
+                    content = post.content,
+                    userImageUrl = imageUrl
+                )
+                findNavController().navigate(action)
             },
             onEditClick = { post -> showEditDialog(post) },
             onDeleteClick = { post -> showDeleteConfirmation(post.id) }
@@ -110,7 +104,6 @@ class ProfileFragment : Fragment() {
     }
 
     private fun loadProfileImage(url: String) {
-        // Force refresh by bypassing all caches and invalidating the URL
         Picasso.get().invalidate(url)
         Picasso.get()
             .load(url)

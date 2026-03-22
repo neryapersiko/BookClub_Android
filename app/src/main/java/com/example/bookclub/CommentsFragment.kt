@@ -1,12 +1,16 @@
 package com.example.bookclub
 
 import android.os.Bundle
-import android.view.MenuItem
+import android.view.LayoutInflater
+import android.view.View
+import android.view.ViewGroup
 import android.widget.EditText
 import android.widget.Toast
-import androidx.activity.viewModels
 import androidx.appcompat.app.AlertDialog
-import androidx.appcompat.app.AppCompatActivity
+import androidx.fragment.app.Fragment
+import androidx.fragment.app.viewModels
+import androidx.navigation.fragment.findNavController
+import androidx.navigation.fragment.navArgs
 import com.example.bookclub.adapter.CommentAdapter
 import com.example.bookclub.database.AppDatabase
 import com.example.bookclub.databinding.ActivityCommentsBinding
@@ -15,21 +19,30 @@ import com.example.bookclub.viewmodel.CommentsViewModel
 import com.example.bookclub.viewmodel.CommentsViewModelFactory
 import com.squareup.picasso.Picasso
 
-class CommentsActivity : AppCompatActivity() {
+class CommentsFragment : Fragment() {
 
-    private lateinit var binding: ActivityCommentsBinding
+    private var _binding: ActivityCommentsBinding? = null
+    private val binding get() = _binding!!
     private lateinit var commentAdapter: CommentAdapter
     
+    private val args: CommentsFragmentArgs by navArgs()
+    
     private val viewModel: CommentsViewModel by viewModels {
-        val postId = intent.getStringExtra("POST_ID") ?: ""
-        val database = AppDatabase.getDatabase(this)
-        CommentsViewModelFactory(BookRepository(database.postDao()), postId)
+        val database = AppDatabase.getDatabase(requireContext())
+        CommentsViewModelFactory(BookRepository(database.postDao()), args.postId)
     }
 
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        binding = ActivityCommentsBinding.inflate(layoutInflater)
-        setContentView(binding.root)
+    override fun onCreateView(
+        inflater: LayoutInflater,
+        container: ViewGroup?,
+        savedInstanceState: Bundle?
+    ): View {
+        _binding = ActivityCommentsBinding.inflate(inflater, container, false)
+        return binding.root
+    }
+
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
 
         setupActionBar()
         setupHeader()
@@ -39,32 +52,20 @@ class CommentsActivity : AppCompatActivity() {
     }
 
     private fun setupActionBar() {
-        setSupportActionBar(binding.toolbar)
-        
-        supportActionBar?.apply {
-            setDisplayHomeAsUpEnabled(true)
-            setDisplayShowHomeEnabled(true)
-            title = "Comments"
+        binding.toolbar.setNavigationIcon(androidx.appcompat.R.drawable.abc_ic_ab_back_material)
+        binding.toolbar.setNavigationOnClickListener {
+            findNavController().popBackStack()
         }
-    }
-
-    override fun onSupportNavigateUp(): Boolean {
-        onBackPressedDispatcher.onBackPressed()
-        return true
+        binding.toolbar.title = "Comments"
     }
 
     private fun setupHeader() {
-        val userName = intent.getStringExtra("USER_NAME") ?: "Anonymous User"
-        val bookTitle = intent.getStringExtra("BOOK_TITLE") ?: "No Title"
-        val content = intent.getStringExtra("CONTENT") ?: ""
-        val userImageUrl = intent.getStringExtra("USER_IMAGE_URL") ?: ""
+        binding.tvHeaderBookTitle.text = args.bookTitle
+        binding.tvHeaderContent.text = args.content
 
-        binding.tvHeaderBookTitle.text = bookTitle
-        binding.tvHeaderContent.text = content
-
-        if (userImageUrl.isNotEmpty()) {
+        if (args.userImageUrl.isNotEmpty()) {
             Picasso.get()
-                .load(userImageUrl)
+                .load(args.userImageUrl)
                 .placeholder(android.R.drawable.ic_menu_gallery)
                 .error(android.R.drawable.stat_notify_error)
                 .resize(120, 120)
@@ -95,25 +96,25 @@ class CommentsActivity : AppCompatActivity() {
     }
 
     private fun observeViewModel() {
-        viewModel.comments.observe(this) { list ->
+        viewModel.comments.observe(viewLifecycleOwner) { list ->
             commentAdapter.submitList(list)
             if (list.isNotEmpty()) {
                 binding.rvComments.scrollToPosition(list.size - 1)
             }
         }
         
-        viewModel.operationStatus.observe(this) { result ->
+        viewModel.operationStatus.observe(viewLifecycleOwner) { result ->
             result.onFailure {
-                Toast.makeText(this, "Error: ${it.message}", Toast.LENGTH_SHORT).show()
+                Toast.makeText(requireContext(), "Error: ${it.message}", Toast.LENGTH_SHORT).show()
             }
         }
     }
 
     private fun showEditDialog(commentId: String, currentText: String) {
-        val editText = EditText(this)
+        val editText = EditText(requireContext())
         editText.setText(currentText)
         
-        AlertDialog.Builder(this)
+        AlertDialog.Builder(requireContext())
             .setTitle("Edit Comment")
             .setView(editText)
             .setPositiveButton("Update") { _, _ ->
@@ -126,11 +127,8 @@ class CommentsActivity : AppCompatActivity() {
             .show()
     }
 
-    override fun onOptionsItemSelected(item: MenuItem): Boolean {
-        if (item.itemId == android.R.id.home) {
-            onBackPressedDispatcher.onBackPressed()
-            return true
-        }
-        return super.onOptionsItemSelected(item)
+    override fun onDestroyView() {
+        super.onDestroyView()
+        _binding = null
     }
 }

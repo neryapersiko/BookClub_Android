@@ -7,9 +7,9 @@ import android.view.ViewGroup
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
-import com.squareup.picasso.Picasso
 import com.example.bookclub.databinding.ItemPostBinding
 import com.example.bookclub.model.Post
+import com.squareup.picasso.Picasso
 
 class PostAdapter(
     private val currentUserId: String?,

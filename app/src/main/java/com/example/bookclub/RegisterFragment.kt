@@ -1,20 +1,23 @@
 package com.example.bookclub
 
-import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
+import android.view.LayoutInflater
 import android.view.View
+import android.view.ViewGroup
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.activity.viewModels
-import androidx.appcompat.app.AppCompatActivity
+import androidx.fragment.app.Fragment
+import androidx.fragment.app.viewModels
+import androidx.navigation.fragment.findNavController
 import com.squareup.picasso.Picasso
 import com.example.bookclub.databinding.ActivityRegisterBinding
 import com.example.bookclub.viewmodel.RegisterViewModel
 
-class RegisterActivity : AppCompatActivity() {
+class RegisterFragment : Fragment() {
 
-    private lateinit var binding: ActivityRegisterBinding
+    private var _binding: ActivityRegisterBinding? = null
+    private val binding get() = _binding!!
     private val viewModel: RegisterViewModel by viewModels()
     private var selectedLocalUri: Uri? = null
 
@@ -25,18 +28,20 @@ class RegisterActivity : AppCompatActivity() {
         }
     }
 
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        binding = ActivityRegisterBinding.inflate(layoutInflater)
-        setContentView(binding.root)
-
-        setupActionBar()
-        setupListeners()
-        observeViewModel()
+    override fun onCreateView(
+        inflater: LayoutInflater,
+        container: ViewGroup?,
+        savedInstanceState: Bundle?
+    ): View {
+        _binding = ActivityRegisterBinding.inflate(inflater, container, false)
+        return binding.root
     }
 
-    private fun setupActionBar() {
-        // Simple ActionBar setup if needed
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+
+        setupListeners()
+        observeViewModel()
     }
 
     private fun setupListeners() {
@@ -50,39 +55,39 @@ class RegisterActivity : AppCompatActivity() {
             val password = binding.etPassword.text.toString().trim()
 
             if (name.isEmpty() || email.isEmpty() || password.isEmpty()) {
-                Toast.makeText(this, "Please fill in all fields", Toast.LENGTH_SHORT).show()
+                Toast.makeText(requireContext(), "Please fill in all fields", Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
 
-            // Updated to pass only registration details and the local Uri
             viewModel.registerUser(name, email, password, selectedLocalUri)
         }
 
         binding.tvLogin.setOnClickListener {
-            startActivity(Intent(this, LoginActivity::class.java))
-            finish()
+            findNavController().popBackStack()
         }
     }
 
     private fun observeViewModel() {
-        viewModel.isLoading.observe(this) { isLoading ->
+        viewModel.isLoading.observe(viewLifecycleOwner) { isLoading ->
             binding.progressBar.visibility = if (isLoading) View.VISIBLE else View.GONE
             binding.btnRegister.isEnabled = !isLoading
         }
 
-        viewModel.registrationStatus.observe(this) { result ->
+        viewModel.registrationStatus.observe(viewLifecycleOwner) { result ->
             result?.let {
                 if (it.isSuccess) {
-                    Toast.makeText(this, "Registration Successful!", Toast.LENGTH_SHORT).show()
-                    val intent = Intent(this, MainActivity::class.java)
-                    intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
-                    startActivity(intent)
-                    finish()
+                    Toast.makeText(requireContext(), "Registration Successful!", Toast.LENGTH_SHORT).show()
+                    findNavController().navigate(R.id.action_registerFragment_to_homeFragment)
                 } else {
-                    Toast.makeText(this, "Error: ${it.exceptionOrNull()?.message}", Toast.LENGTH_LONG).show()
+                    Toast.makeText(requireContext(), "Error: ${it.exceptionOrNull()?.message}", Toast.LENGTH_LONG).show()
                     viewModel.resetStatus()
                 }
             }
         }
+    }
+
+    override fun onDestroyView() {
+        super.onDestroyView()
+        _binding = null
     }
 }
