@@ -19,3 +19,6 @@ app/google-services.json
 .idea/
 *.swp
 *~
+
+# Project planning notes (local only)
+plan.md
