@@ -49,6 +49,88 @@
                     android:inputType="text" />
             </com.google.android.material.textfield.TextInputLayout>
 
+            <Button
+                android:id="@+id/btnAutoFill"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:text="Auto-fill Book Details"
+                android:textAllCaps="false"
+                app:cornerRadius="8dp"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/tilBookTitle" />
+
+            <ProgressBar
+                android:id="@+id/progressBarAutoFill"
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:visibility="gone"
+                app:layout_constraintBottom_toBottomOf="@id/btnAutoFill"
+                app:layout_constraintEnd_toEndOf="@id/btnAutoFill"
+                app:layout_constraintStart_toStartOf="@id/btnAutoFill"
+                app:layout_constraintTop_toTopOf="@id/btnAutoFill" />
+
+            <com.google.android.material.textfield.TextInputLayout
+                android:id="@+id/tilBookAuthor"
+                style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:hint="Book Author"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/btnAutoFill">
+
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/etBookAuthor"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:inputType="textPersonName" />
+            </com.google.android.material.textfield.TextInputLayout>
+
+            <com.google.android.material.textfield.TextInputLayout
+                android:id="@+id/tilBookPublishYear"
+                style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:hint="Publish Year"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/tilBookAuthor">
+
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/etBookPublishYear"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:inputType="number" />
+            </com.google.android.material.textfield.TextInputLayout>
+
+            <ImageView
+                android:id="@+id/ivBookCoverPreview"
+                android:layout_width="100dp"
+                android:layout_height="150dp"
+                android:layout_marginTop="16dp"
+                android:scaleType="centerCrop"
+                android:visibility="gone"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/tilBookPublishYear"
+                tools:visibility="visible" />
+
+            <Button
+                android:id="@+id/btnUploadBookImage"
+                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:text="Upload Book Image"
+                android:textAllCaps="false"
+                app:cornerRadius="8dp"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/ivBookCoverPreview" />
+
             <com.google.android.material.textfield.TextInputLayout
                 android:id="@+id/tilContent"
                 style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
@@ -58,7 +140,7 @@
                 android:hint="What's on your mind?"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toBottomOf="@id/tilBookTitle">
+                app:layout_constraintTop_toBottomOf="@id/btnUploadBookImage">
 
                 <com.google.android.material.textfield.TextInputEditText
                     android:id="@+id/etContent"

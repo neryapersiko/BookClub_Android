@@ -1,5 +1,6 @@
 package com.example.bookclub.network
 
+import com.example.bookclub.BuildConfig
 import com.example.bookclub.model.BookDetails
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
@@ -16,10 +17,11 @@ object GoogleBooksService {
             .create(GoogleBooksApiService::class.java)
     }
 
-    suspend fun fetchBookDetails(title: String): BookDetails? {
+    suspend fun fetchBookDetails(title: String): BookSearchResult {
         return try {
-            val response = api.searchBooks(title)
-            val volumeInfo = response.items?.firstOrNull()?.volumeInfo ?: return null
+            val response = api.searchBooks(title, BuildConfig.GOOGLE_BOOKS_API_KEY)
+            val volumeInfo = response.items?.firstOrNull()?.volumeInfo
+                ?: return BookSearchResult.NotFound
 
             val author = volumeInfo.authors?.firstOrNull() ?: ""
             val publishYear = volumeInfo.publishedDate
@@ -28,16 +30,18 @@ object GoogleBooksService {
             val imageUrl = volumeInfo.imageLinks?.thumbnail ?: ""
 
             if (author.isEmpty() && publishYear == null && imageUrl.isEmpty()) {
-                return null
+                return BookSearchResult.NotFound
             }
 
-            BookDetails(
-                author = author,
-                publishYear = publishYear,
-                imageUrl = imageUrl
+            BookSearchResult.Success(
+                BookDetails(
+                    author = author,
+                    publishYear = publishYear,
+                    imageUrl = imageUrl
+                )
             )
         } catch (e: Exception) {
-            null
+            BookSearchResult.ServiceError(e.message ?: "Unknown error")
         }
     }
 }
