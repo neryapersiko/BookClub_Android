@@ -62,6 +62,10 @@ class CreatePostViewModel : ViewModel() {
         }
     }
 
+    fun clearBookImage() {
+        autoFilledImageUrl = null
+    }
+
     fun savePost(
         bookTitle: String,
         bookAuthor: String,

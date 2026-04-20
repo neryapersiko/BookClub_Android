@@ -62,7 +62,10 @@ class ProfileFragment : Fragment() {
                     userName = post.userName,
                     bookTitle = post.bookTitle,
                     content = post.content,
-                    userImageUrl = imageUrl
+                    userImageUrl = imageUrl,
+                    bookAuthor = post.bookAuthor,
+                    bookPublishYear = post.bookPublishYear ?: 0,
+                    bookImageUrl = post.bookImageUrl
                 )
                 findNavController().navigate(action)
             },
@@ -146,6 +149,19 @@ class ProfileFragment : Fragment() {
         etTitle.setText(post.bookTitle)
         layout.addView(etTitle)
 
+        val etAuthor = EditText(requireContext())
+        etAuthor.hint = "Book Author"
+        etAuthor.setText(post.bookAuthor)
+        layout.addView(etAuthor)
+
+        val etYear = EditText(requireContext())
+        etYear.hint = "Publish Year"
+        etYear.inputType = android.text.InputType.TYPE_CLASS_NUMBER
+        if (post.bookPublishYear != null) {
+            etYear.setText(post.bookPublishYear.toString())
+        }
+        layout.addView(etYear)
+
         val etContent = EditText(requireContext())
         etContent.hint = "Content"
         etContent.setText(post.content)
@@ -156,9 +172,11 @@ class ProfileFragment : Fragment() {
             .setView(layout)
             .setPositiveButton("Update") { _, _ ->
                 val newTitle = etTitle.text.toString().trim()
+                val newAuthor = etAuthor.text.toString().trim()
+                val newYear = etYear.text.toString().trim().toIntOrNull()
                 val newContent = etContent.text.toString().trim()
                 if (newTitle.isNotEmpty() && newContent.isNotEmpty()) {
-                    viewModel.updatePost(post.id, newTitle, newContent)
+                    viewModel.updatePost(post.id, newTitle, newAuthor, newYear, newContent)
                 }
             }
             .setNegativeButton("Cancel", null)

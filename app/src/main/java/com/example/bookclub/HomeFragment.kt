@@ -69,7 +69,10 @@ class HomeFragment : Fragment() {
                     userName = post.userName,
                     bookTitle = post.bookTitle,
                     content = post.content,
-                    userImageUrl = imageUrl
+                    userImageUrl = imageUrl,
+                    bookAuthor = post.bookAuthor,
+                    bookPublishYear = post.bookPublishYear ?: 0,
+                    bookImageUrl = post.bookImageUrl
                 )
                 findNavController().navigate(action)
             }

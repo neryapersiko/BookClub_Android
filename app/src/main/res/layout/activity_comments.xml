@@ -38,57 +38,93 @@
             android:orientation="vertical"
             android:padding="16dp">
 
-            <RelativeLayout
+            <!-- User header -->
+            <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:gravity="center_vertical"
                 android:layout_marginBottom="8dp">
 
                 <com.google.android.material.imageview.ShapeableImageView
                     android:id="@+id/ivHeaderProfile"
                     android:layout_width="40dp"
                     android:layout_height="40dp"
-                    android:layout_alignParentStart="true"
-                    android:layout_centerVertical="true"
                     android:scaleType="centerCrop"
                     android:src="@android:drawable/ic_menu_gallery"
                     app:shapeAppearanceOverlay="@style/ShapeAppearance.MaterialComponents.SmallComponent"
                     app:strokeColor="@color/purple_500"
                     app:strokeWidth="1dp" />
 
-                <LinearLayout
-                    android:layout_width="match_parent"
+                <TextView
+                    android:id="@+id/tvHeaderUserName"
+                    android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_toEndOf="@id/ivHeaderProfile"
                     android:layout_marginStart="12dp"
-                    android:layout_centerVertical="true"
+                    android:textSize="13sp"
+                    android:textColor="@android:color/darker_gray"
+                    tools:text="Emily Watson" />
+            </LinearLayout>
+
+            <!-- Book section -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal">
+
+                <ImageView
+                    android:id="@+id/ivHeaderBookCover"
+                    android:layout_width="60dp"
+                    android:layout_height="90dp"
+                    android:scaleType="centerCrop"
+                    android:src="@android:drawable/ic_menu_gallery" />
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center_vertical"
+                    android:layout_marginStart="12dp"
+                    android:layout_weight="1"
                     android:orientation="vertical">
 
                     <TextView
                         android:id="@+id/tvHeaderBookTitle"
-                        android:layout_width="match_parent"
+                        android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:textStyle="bold"
                         android:textSize="16sp"
                         android:textColor="@color/black"
                         tools:text="Book Title" />
 
-                    <!-- Set visibility to gone instead of deleting to avoid Binding errors if reference exists -->
                     <TextView
-                        android:id="@+id/tvHeaderUserName"
-                        android:layout_width="match_parent"
+                        android:id="@+id/tvHeaderBookAuthor"
+                        android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
+                        android:layout_marginTop="4dp"
+                        android:textSize="14sp"
+                        android:textColor="@android:color/darker_gray"
+                        android:visibility="gone"
+                        tools:text="by George Orwell"
+                        tools:visibility="visible" />
+
+                    <TextView
+                        android:id="@+id/tvHeaderBookPublishYear"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="2dp"
                         android:textSize="12sp"
                         android:textColor="@android:color/darker_gray"
                         android:visibility="gone"
-                        tools:text="Posted by: Emily Watson" />
+                        tools:text="(1949)"
+                        tools:visibility="visible" />
                 </LinearLayout>
-            </RelativeLayout>
+            </LinearLayout>
 
+            <!-- User review content -->
             <TextView
                 android:id="@+id/tvHeaderContent"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
+                android:layout_marginTop="12dp"
                 android:textSize="14sp"
                 android:textColor="@color/black"
                 tools:text="This is the post content..." />

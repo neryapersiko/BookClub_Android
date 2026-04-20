@@ -101,6 +101,18 @@
         <argument
             android:name="userImageUrl"
             app:argType="string" />
+        <argument
+            android:name="bookAuthor"
+            app:argType="string"
+            android:defaultValue="" />
+        <argument
+            android:name="bookPublishYear"
+            app:argType="integer"
+            android:defaultValue="0" />
+        <argument
+            android:name="bookImageUrl"
+            app:argType="string"
+            android:defaultValue="" />
     </fragment>
 
 </navigation>

@@ -215,15 +215,21 @@ class BookRepository(
         }
     }
 
-    suspend fun updatePost(postId: String, newTitle: String, newContent: String): Result<Unit> = withContext(Dispatchers.IO) {
+    suspend fun updatePost(postId: String, newTitle: String, newAuthor: String, newYear: Int?, newContent: String): Result<Unit> = withContext(Dispatchers.IO) {
         return@withContext try {
             val currentUserId = auth.currentUser?.uid ?: throw Exception("Not authenticated")
             val postRef = firestore.collection("posts").document(postId)
             val snapshot = postRef.get().await()
             val post = snapshot.toObject(Post::class.java)
-            
+
             if (post?.userId == currentUserId) {
-                postRef.update(mapOf("bookTitle" to newTitle, "content" to newContent)).await()
+                val updates = mutableMapOf<String, Any?>(
+                    "bookTitle" to newTitle,
+                    "bookAuthor" to newAuthor,
+                    "bookPublishYear" to newYear,
+                    "content" to newContent
+                )
+                postRef.update(updates).await()
                 Result.success(Unit)
             } else {
                 throw Exception("Unauthorized")

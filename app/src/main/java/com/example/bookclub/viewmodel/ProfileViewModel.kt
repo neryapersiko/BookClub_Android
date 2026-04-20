@@ -116,13 +116,19 @@ class ProfileViewModel : ViewModel() {
         }
     }
 
-    fun updatePost(postId: String, newTitle: String, newContent: String) {
+    fun updatePost(postId: String, newTitle: String, newAuthor: String, newYear: Int?, newContent: String) {
         viewModelScope.launch {
             try {
-                val updates = mapOf(
+                val updates = mutableMapOf<String, Any?>(
                     "bookTitle" to newTitle,
+                    "bookAuthor" to newAuthor,
                     "content" to newContent
                 )
+                if (newYear != null) {
+                    updates["bookPublishYear"] = newYear
+                } else {
+                    updates["bookPublishYear"] = null
+                }
                 firestore.collection("posts").document(postId).update(updates).await()
             } catch (e: Exception) {
                 // Error handling

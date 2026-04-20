@@ -30,43 +30,61 @@ class PostAdapter(
 
     inner class PostViewHolder(private val binding: ItemPostBinding) : RecyclerView.ViewHolder(binding.root) {
         fun bind(post: Post) {
-            binding.tvBookTitle.text = post.bookTitle
+            // User header
             binding.tvAuthorName.text = post.userName
-            binding.tvContent.text = post.content
             binding.tvLikesCount.text = post.likesCount.toString()
 
-            // Safe image URL selection
-            val imageUrl = post.profileImageUrl.ifEmpty { post.userImageUrl }
-            
-            if (imageUrl.isNotEmpty()) {
-                // Attempt to load from Network/Cache normally
+            // User profile image
+            val profileUrl = post.profileImageUrl.ifEmpty { post.userImageUrl }
+            if (profileUrl.isNotEmpty()) {
                 Picasso.get()
-                    .load(imageUrl)
+                    .load(profileUrl)
                     .placeholder(android.R.drawable.ic_menu_gallery)
-                    .error(android.R.drawable.stat_notify_error)
+                    .error(android.R.drawable.ic_menu_gallery)
                     .resize(120, 120)
                     .centerCrop()
                     .onlyScaleDown()
-                    .into(binding.ivAuthorProfile, object : com.squareup.picasso.Callback {
-                        override fun onSuccess() {
-                            // Image loaded successfully
-                        }
-
-                        override fun onError(e: Exception?) {
-                            // If network load fails, try loading strictly from local cache
-                            Picasso.get()
-                                .load(imageUrl)
-                                .networkPolicy(com.squareup.picasso.NetworkPolicy.OFFLINE)
-                                .placeholder(android.R.drawable.ic_menu_gallery)
-                                .resize(120, 120)
-                                .centerCrop()
-                                .into(binding.ivAuthorProfile)
-                        }
-                    })
+                    .into(binding.ivAuthorProfile)
             } else {
                 binding.ivAuthorProfile.setImageResource(android.R.drawable.ic_menu_gallery)
             }
-            
+
+            // Book section
+            binding.tvBookTitle.text = post.bookTitle
+
+            if (post.bookAuthor.isNotEmpty()) {
+                binding.tvBookAuthor.text = "by ${post.bookAuthor}"
+                binding.tvBookAuthor.visibility = View.VISIBLE
+            } else {
+                binding.tvBookAuthor.visibility = View.GONE
+            }
+
+            if (post.bookPublishYear != null) {
+                binding.tvBookPublishYear.text = "(${post.bookPublishYear})"
+                binding.tvBookPublishYear.visibility = View.VISIBLE
+            } else {
+                binding.tvBookPublishYear.visibility = View.GONE
+            }
+
+            // Book cover image
+            if (post.bookImageUrl.isNotEmpty()) {
+                val coverUrl = post.bookImageUrl.replace("http://", "https://")
+                Picasso.get()
+                    .load(coverUrl)
+                    .placeholder(android.R.drawable.ic_menu_gallery)
+                    .error(android.R.drawable.ic_menu_gallery)
+                    .resize(240, 360)
+                    .centerCrop()
+                    .onlyScaleDown()
+                    .into(binding.ivBookCover)
+            } else {
+                binding.ivBookCover.setImageResource(android.R.drawable.ic_menu_gallery)
+            }
+
+            // User review content
+            binding.tvContent.text = post.content
+
+            // Edit/Delete buttons (own posts only)
             if (post.userId == currentUserId && onEditClick != null && onDeleteClick != null) {
                 binding.layoutPostActions.visibility = View.VISIBLE
                 binding.btnEditPost.setOnClickListener { onEditClick.invoke(post) }
@@ -75,6 +93,7 @@ class PostAdapter(
                 binding.layoutPostActions.visibility = View.GONE
             }
 
+            // Like button state
             val isLiked = currentUserId != null && (post.likedBy.contains(currentUserId) || post.likes?.contains(currentUserId) == true)
             if (isLiked) {
                 binding.btnLike.setIconTintResource(android.R.color.holo_red_dark)
@@ -84,6 +103,7 @@ class PostAdapter(
                 binding.btnLike.setTextColor(Color.BLACK)
             }
 
+            // Click listeners
             binding.btnLike.setOnClickListener { onLikeClick(post) }
             binding.btnComment.setOnClickListener { onCommentClick(post) }
             binding.root.setOnClickListener { onCommentClick(post) }

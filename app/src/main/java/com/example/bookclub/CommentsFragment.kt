@@ -61,18 +61,51 @@ class CommentsFragment : Fragment() {
 
     private fun setupHeader() {
         binding.tvHeaderBookTitle.text = args.bookTitle
+        binding.tvHeaderUserName.text = args.userName
         binding.tvHeaderContent.text = args.content
 
+        // User profile image
         if (args.userImageUrl.isNotEmpty()) {
             Picasso.get()
                 .load(args.userImageUrl)
                 .placeholder(android.R.drawable.ic_menu_gallery)
-                .error(android.R.drawable.stat_notify_error)
+                .error(android.R.drawable.ic_menu_gallery)
                 .resize(120, 120)
                 .centerCrop()
                 .into(binding.ivHeaderProfile)
         } else {
             binding.ivHeaderProfile.setImageResource(android.R.drawable.ic_menu_gallery)
+        }
+
+        // Book author
+        if (args.bookAuthor.isNotEmpty()) {
+            binding.tvHeaderBookAuthor.text = "by ${args.bookAuthor}"
+            binding.tvHeaderBookAuthor.visibility = View.VISIBLE
+        } else {
+            binding.tvHeaderBookAuthor.visibility = View.GONE
+        }
+
+        // Book publish year (0 means not set)
+        if (args.bookPublishYear != 0) {
+            binding.tvHeaderBookPublishYear.text = "(${args.bookPublishYear})"
+            binding.tvHeaderBookPublishYear.visibility = View.VISIBLE
+        } else {
+            binding.tvHeaderBookPublishYear.visibility = View.GONE
+        }
+
+        // Book cover image
+        if (args.bookImageUrl.isNotEmpty()) {
+            val coverUrl = args.bookImageUrl.replace("http://", "https://")
+            Picasso.get()
+                .load(coverUrl)
+                .placeholder(android.R.drawable.ic_menu_gallery)
+                .error(android.R.drawable.ic_menu_gallery)
+                .resize(180, 270)
+                .centerCrop()
+                .onlyScaleDown()
+                .into(binding.ivHeaderBookCover)
+        } else {
+            binding.ivHeaderBookCover.setImageResource(android.R.drawable.ic_menu_gallery)
         }
     }
 

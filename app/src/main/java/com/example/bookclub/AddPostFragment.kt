@@ -20,11 +20,13 @@ class AddPostFragment : Fragment() {
     private val binding get() = _binding!!
     private val viewModel: CreatePostViewModel by viewModels()
     private var selectedBookImageUri: Uri? = null
+    private var isImageRemoved = false
 
     private val galleryLauncher = registerForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
         uri?.let {
             selectedBookImageUri = it
             binding.ivBookCoverPreview.visibility = View.VISIBLE
+            binding.btnRemoveBookImage.visibility = View.VISIBLE
             Picasso.get().load(it).into(binding.ivBookCoverPreview)
         }
     }
@@ -60,11 +62,20 @@ class AddPostFragment : Fragment() {
                 Toast.makeText(requireContext(), "Enter a book title first", Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
+            isImageRemoved = false
             viewModel.fetchBookDetails(title)
         }
 
         binding.btnUploadBookImage.setOnClickListener {
             galleryLauncher.launch("image/*")
+        }
+
+        binding.btnRemoveBookImage.setOnClickListener {
+            selectedBookImageUri = null
+            isImageRemoved = true
+            viewModel.clearBookImage()
+            binding.ivBookCoverPreview.visibility = View.GONE
+            binding.btnRemoveBookImage.visibility = View.GONE
         }
 
         binding.btnPublish.setOnClickListener {
@@ -89,9 +100,10 @@ class AddPostFragment : Fragment() {
                 if (it.publishYear != null) {
                     binding.etBookPublishYear.setText(it.publishYear.toString())
                 }
-                if (it.imageUrl.isNotEmpty() && selectedBookImageUri == null) {
+                if (it.imageUrl.isNotEmpty() && selectedBookImageUri == null && !isImageRemoved) {
                     val httpsUrl = it.imageUrl.replace("http://", "https://")
                     binding.ivBookCoverPreview.visibility = View.VISIBLE
+                    binding.btnRemoveBookImage.visibility = View.VISIBLE
                     Picasso.get().load(httpsUrl).into(binding.ivBookCoverPreview)
                 }
             }
