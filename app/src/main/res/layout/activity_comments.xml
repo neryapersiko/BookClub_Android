@@ -4,6 +4,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:background="@color/background"
     tools:context=".CommentsActivity">
 
     <com.google.android.material.appbar.AppBarLayout
@@ -16,18 +17,18 @@
             android:id="@+id/toolbar"
             android:layout_width="match_parent"
             android:layout_height="?attr/actionBarSize"
-            android:background="?attr/colorPrimary"
-            app:titleTextColor="@android:color/white" />
+            android:background="@color/primary"
+            app:titleTextColor="@color/white" />
     </com.google.android.material.appbar.AppBarLayout>
 
-    <!-- Original Post Header -->
+    <!-- Post Header Card -->
     <com.google.android.material.card.MaterialCardView
         android:id="@+id/cardPostHeader"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_margin="8dp"
-        app:cardCornerRadius="12dp"
-        app:cardElevation="2dp"
+        app:cardBackgroundColor="@color/surface"
+        app:cardCornerRadius="0dp"
+        app:cardElevation="1dp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/appBarLayout">
@@ -50,9 +51,9 @@
                     android:layout_width="40dp"
                     android:layout_height="40dp"
                     android:scaleType="centerCrop"
-                    android:src="@android:drawable/ic_menu_gallery"
+                    android:src="@drawable/avatar_default"
                     app:shapeAppearanceOverlay="@style/ShapeAppearance.MaterialComponents.SmallComponent"
-                    app:strokeColor="@color/purple_500"
+                    app:strokeColor="@color/divider"
                     app:strokeWidth="1dp" />
 
                 <TextView
@@ -60,8 +61,9 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginStart="12dp"
-                    android:textSize="13sp"
-                    android:textColor="@android:color/darker_gray"
+                    android:textColor="@color/text_primary"
+                    android:textSize="14sp"
+                    android:textStyle="bold"
                     tools:text="Emily Watson" />
             </LinearLayout>
 
@@ -76,7 +78,7 @@
                     android:layout_width="60dp"
                     android:layout_height="90dp"
                     android:scaleType="centerCrop"
-                    android:src="@android:drawable/ic_menu_gallery" />
+                    android:src="@drawable/book_cover_default" />
 
                 <LinearLayout
                     android:layout_width="0dp"
@@ -90,9 +92,9 @@
                         android:id="@+id/tvHeaderBookTitle"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:textStyle="bold"
+                        android:textColor="@color/text_primary"
                         android:textSize="16sp"
-                        android:textColor="@color/black"
+                        android:textStyle="bold"
                         tools:text="Book Title" />
 
                     <TextView
@@ -100,8 +102,8 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="4dp"
+                        android:textColor="@color/text_secondary"
                         android:textSize="14sp"
-                        android:textColor="@android:color/darker_gray"
                         android:visibility="gone"
                         tools:text="by George Orwell"
                         tools:visibility="visible" />
@@ -111,8 +113,8 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="2dp"
+                        android:textColor="@color/text_secondary"
                         android:textSize="12sp"
-                        android:textColor="@android:color/darker_gray"
                         android:visibility="gone"
                         tools:text="(1949)"
                         tools:visibility="visible" />
@@ -125,8 +127,8 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="12dp"
-                android:textSize="14sp"
-                android:textColor="@color/black"
+                android:textColor="@color/text_primary"
+                android:textSize="15sp"
                 tools:text="This is the post content..." />
         </LinearLayout>
     </com.google.android.material.card.MaterialCardView>
@@ -143,12 +145,14 @@
         app:layout_constraintTop_toBottomOf="@id/cardPostHeader"
         tools:listitem="@layout/item_comment" />
 
+    <!-- Comment input bar -->
     <LinearLayout
         android:id="@+id/layoutInput"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="@android:color/white"
+        android:background="@color/surface"
         android:elevation="8dp"
+        android:gravity="center_vertical"
         android:orientation="horizontal"
         android:padding="8dp"
         app:layout_constraintBottom_toBottomOf="parent">
@@ -158,9 +162,11 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
+            android:background="@android:color/transparent"
             android:hint="Write a comment..."
             android:padding="12dp"
-            android:background="@android:color/transparent" />
+            android:textColor="@color/text_primary"
+            android:textColorHint="@color/text_secondary" />
 
         <ImageButton
             android:id="@+id/btnSend"
@@ -168,7 +174,7 @@
             android:layout_height="48dp"
             android:background="?attr/selectableItemBackgroundBorderless"
             android:src="@android:drawable/ic_menu_send"
-            app:tint="@color/purple_500" />
+            app:tint="@color/primary" />
     </LinearLayout>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

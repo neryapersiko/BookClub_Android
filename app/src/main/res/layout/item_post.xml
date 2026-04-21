@@ -5,11 +5,15 @@
     android:id="@+id/cardPost"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:layout_margin="8dp"
+    android:layout_marginStart="0dp"
+    android:layout_marginEnd="0dp"
+    android:layout_marginBottom="1dp"
     android:clickable="true"
     android:focusable="true"
-    app:cardCornerRadius="12dp"
-    app:cardElevation="4dp">
+    app:cardBackgroundColor="@color/surface"
+    app:cardCornerRadius="0dp"
+    app:cardElevation="0dp"
+    app:strokeWidth="0dp">
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -27,30 +31,39 @@
                 android:layout_width="40dp"
                 android:layout_height="40dp"
                 android:layout_alignParentStart="true"
-                android:layout_alignParentTop="true"
+                android:layout_centerVertical="true"
                 android:scaleType="centerCrop"
-                android:src="@android:drawable/ic_menu_gallery"
+                android:src="@drawable/avatar_default"
                 app:shapeAppearanceOverlay="@style/ShapeAppearance.MaterialComponents.SmallComponent"
-                app:strokeColor="@color/purple_500"
+                app:strokeColor="@color/divider"
                 app:strokeWidth="1dp" />
 
-            <TextView
-                android:id="@+id/tvAuthorName"
+            <LinearLayout
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_centerVertical="true"
                 android:layout_marginStart="12dp"
                 android:layout_toEndOf="@id/ivAuthorProfile"
                 android:layout_toStartOf="@+id/layoutPostActions"
-                android:text="Author Name"
-                android:textColor="@android:color/darker_gray"
-                android:textSize="13sp" />
+                android:orientation="vertical">
+
+                <TextView
+                    android:id="@+id/tvAuthorName"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Author Name"
+                    android:textColor="@color/text_primary"
+                    android:textSize="14sp"
+                    android:textStyle="bold" />
+
+            </LinearLayout>
 
             <LinearLayout
                 android:id="@+id/layoutPostActions"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_alignParentEnd="true"
+                android:layout_centerVertical="true"
                 android:orientation="horizontal"
                 android:visibility="gone"
                 tools:visibility="visible">
@@ -61,7 +74,7 @@
                     android:layout_height="36dp"
                     android:background="?attr/selectableItemBackgroundBorderless"
                     android:src="@android:drawable/ic_menu_edit"
-                    app:tint="@color/purple_500" />
+                    app:tint="@color/primary" />
 
                 <ImageButton
                     android:id="@+id/btnDeletePost"
@@ -69,7 +82,7 @@
                     android:layout_height="36dp"
                     android:background="?attr/selectableItemBackgroundBorderless"
                     android:src="@android:drawable/ic_menu_delete"
-                    app:tint="@android:color/holo_red_dark" />
+                    app:tint="@color/like_red" />
             </LinearLayout>
         </RelativeLayout>
 
@@ -85,7 +98,7 @@
                 android:layout_width="80dp"
                 android:layout_height="120dp"
                 android:scaleType="centerCrop"
-                android:src="@android:drawable/ic_menu_gallery" />
+                android:src="@drawable/book_cover_default" />
 
             <LinearLayout
                 android:layout_width="0dp"
@@ -100,7 +113,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="Book Title"
-                    android:textColor="@color/black"
+                    android:textColor="@color/text_primary"
                     android:textSize="18sp"
                     android:textStyle="bold" />
 
@@ -109,7 +122,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="4dp"
-                    android:textColor="@android:color/darker_gray"
+                    android:textColor="@color/text_secondary"
                     android:textSize="14sp"
                     tools:text="by George Orwell" />
 
@@ -118,7 +131,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="2dp"
-                    android:textColor="@android:color/darker_gray"
+                    android:textColor="@color/text_secondary"
                     android:textSize="12sp"
                     tools:text="(1949)" />
 
@@ -132,15 +145,22 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="12dp"
             android:text="Post content goes here..."
-            android:textColor="@color/black"
-            android:textSize="14sp" />
+            android:textColor="@color/text_primary"
+            android:textSize="15sp" />
 
-        <!-- Action buttons -->
+        <!-- Divider -->
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:layout_marginTop="12dp"
+            android:background="@color/divider" />
+
+        <!-- Action buttons — right aligned -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
-            android:gravity="center_vertical"
+            android:layout_marginTop="4dp"
+            android:gravity="end|center_vertical"
             android:orientation="horizontal">
 
             <com.google.android.material.button.MaterialButton
@@ -149,14 +169,17 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="Like"
-                app:icon="@android:drawable/btn_star" />
+                android:textColor="@color/text_secondary"
+                app:icon="@android:drawable/btn_star"
+                app:iconTint="@color/text_secondary" />
 
             <TextView
                 android:id="@+id/tvLikesCount"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginStart="4dp"
+                android:layout_marginStart="2dp"
                 android:text="0"
+                android:textColor="@color/text_secondary"
                 android:textSize="14sp" />
 
             <com.google.android.material.button.MaterialButton
@@ -164,9 +187,11 @@
                 style="@style/Widget.MaterialComponents.Button.TextButton"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginStart="16dp"
+                android:layout_marginStart="8dp"
                 android:text="Comment"
-                app:icon="@android:drawable/ic_menu_send" />
+                android:textColor="@color/text_secondary"
+                app:icon="@android:drawable/ic_menu_send"
+                app:iconTint="@color/text_secondary" />
         </LinearLayout>
     </LinearLayout>
 </com.google.android.material.card.MaterialCardView>

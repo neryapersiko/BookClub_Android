@@ -1,6 +1,5 @@
 package com.example.bookclub.adapter
 
-import android.graphics.Color
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -8,6 +7,7 @@ import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.example.bookclub.databinding.ItemPostBinding
+import com.example.bookclub.R
 import com.example.bookclub.model.Post
 import com.squareup.picasso.Picasso
 
@@ -39,14 +39,14 @@ class PostAdapter(
             if (profileUrl.isNotEmpty()) {
                 Picasso.get()
                     .load(profileUrl)
-                    .placeholder(android.R.drawable.ic_menu_gallery)
-                    .error(android.R.drawable.ic_menu_gallery)
+                    .placeholder(R.drawable.avatar_default)
+                    .error(R.drawable.avatar_default)
                     .resize(120, 120)
                     .centerCrop()
                     .onlyScaleDown()
                     .into(binding.ivAuthorProfile)
             } else {
-                binding.ivAuthorProfile.setImageResource(android.R.drawable.ic_menu_gallery)
+                binding.ivAuthorProfile.setImageResource(R.drawable.avatar_default)
             }
 
             // Book section
@@ -71,14 +71,14 @@ class PostAdapter(
                 val coverUrl = post.bookImageUrl.replace("http://", "https://")
                 Picasso.get()
                     .load(coverUrl)
-                    .placeholder(android.R.drawable.ic_menu_gallery)
-                    .error(android.R.drawable.ic_menu_gallery)
+                    .placeholder(R.drawable.book_cover_default)
+                    .error(R.drawable.book_cover_default)
                     .resize(240, 360)
                     .centerCrop()
                     .onlyScaleDown()
                     .into(binding.ivBookCover)
             } else {
-                binding.ivBookCover.setImageResource(android.R.drawable.ic_menu_gallery)
+                binding.ivBookCover.setImageResource(R.drawable.book_cover_default)
             }
 
             // User review content
@@ -95,12 +95,15 @@ class PostAdapter(
 
             // Like button state
             val isLiked = currentUserId != null && (post.likedBy.contains(currentUserId) || post.likes?.contains(currentUserId) == true)
+            val context = binding.root.context
             if (isLiked) {
-                binding.btnLike.setIconTintResource(android.R.color.holo_red_dark)
-                binding.btnLike.setTextColor(Color.RED)
+                val likeColor = context.getColor(R.color.like_red)
+                binding.btnLike.setIconTintResource(R.color.like_red)
+                binding.btnLike.setTextColor(likeColor)
             } else {
-                binding.btnLike.setIconTintResource(android.R.color.darker_gray)
-                binding.btnLike.setTextColor(Color.BLACK)
+                val secondaryColor = context.getColor(R.color.text_secondary)
+                binding.btnLike.setIconTintResource(R.color.text_secondary)
+                binding.btnLike.setTextColor(secondaryColor)
             }
 
             // Click listeners

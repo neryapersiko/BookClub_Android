@@ -7,6 +7,7 @@ import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.squareup.picasso.Picasso
+import com.example.bookclub.R
 import com.example.bookclub.databinding.ItemCommentBinding
 import com.example.bookclub.model.Comment
 
@@ -34,10 +35,11 @@ class CommentAdapter(
             if (!comment.profileImageUrl.isNullOrEmpty()) {
                 Picasso.get()
                     .load(comment.profileImageUrl)
-                    .placeholder(android.R.drawable.ic_menu_gallery)
+                    .placeholder(R.drawable.avatar_default)
+                    .error(R.drawable.avatar_default)
                     .into(binding.ivCommentAuthorProfile)
             } else {
-                binding.ivCommentAuthorProfile.setImageResource(android.R.drawable.ic_menu_gallery)
+                binding.ivCommentAuthorProfile.setImageResource(R.drawable.avatar_default)
             }
 
             // Show Edit/Delete only for the owner

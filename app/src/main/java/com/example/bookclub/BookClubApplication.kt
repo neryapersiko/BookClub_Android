@@ -1,6 +1,7 @@
 package com.example.bookclub
 
 import android.app.Application
+import androidx.appcompat.app.AppCompatDelegate
 import com.squareup.picasso.OkHttp3Downloader
 import com.squareup.picasso.Picasso
 import okhttp3.Cache
@@ -10,6 +11,7 @@ import java.io.File
 class BookClubApplication : Application() {
     override fun onCreate() {
         super.onCreate()
+        AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO)
 
         // Create a dedicated directory for the OkHttp cache (50MB)
         val cacheDirectory = File(cacheDir, "http-cache")

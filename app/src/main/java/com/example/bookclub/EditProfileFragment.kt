@@ -108,7 +108,7 @@ class EditProfileFragment : Fragment() {
                 Picasso.get().load(newUrl)
                     .memoryPolicy(MemoryPolicy.NO_CACHE, MemoryPolicy.NO_STORE)
                     .networkPolicy(NetworkPolicy.NO_CACHE)
-                    .placeholder(android.R.drawable.ic_menu_gallery)
+                    .placeholder(R.drawable.avatar_default)
                     .into(binding.ivEditProfileImage)
                 binding.root.invalidate()
             }

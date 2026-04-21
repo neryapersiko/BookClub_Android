@@ -4,6 +4,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:background="@color/background"
     tools:context=".AddPostActivity">
 
     <com.google.android.material.appbar.AppBarLayout
@@ -16,9 +17,9 @@
             android:id="@+id/toolbar"
             android:layout_width="match_parent"
             android:layout_height="?attr/actionBarSize"
-            android:background="?attr/colorPrimary"
-            app:title="Add New Post"
-            app:titleTextColor="@android:color/white" />
+            android:background="@color/primary"
+            app:title="New Post"
+            app:titleTextColor="@color/white" />
     </com.google.android.material.appbar.AppBarLayout>
 
     <ScrollView
@@ -34,7 +35,7 @@
 
             <com.google.android.material.textfield.TextInputLayout
                 android:id="@+id/tilBookTitle"
-                style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+                style="@style/BookClub.TextInput"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:hint="Book Title"
@@ -51,12 +52,11 @@
 
             <Button
                 android:id="@+id/btnAutoFill"
+                style="@style/BookClub.Button.Outlined"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="8dp"
                 android:text="Auto-fill Book Details"
-                android:textAllCaps="false"
-                app:cornerRadius="8dp"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toBottomOf="@id/tilBookTitle" />
@@ -73,7 +73,7 @@
 
             <com.google.android.material.textfield.TextInputLayout
                 android:id="@+id/tilBookAuthor"
-                style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+                style="@style/BookClub.TextInput"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="16dp"
@@ -91,7 +91,7 @@
 
             <com.google.android.material.textfield.TextInputLayout
                 android:id="@+id/tilBookPublishYear"
-                style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+                style="@style/BookClub.TextInput"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="16dp"
@@ -132,20 +132,18 @@
 
             <Button
                 android:id="@+id/btnUploadBookImage"
-                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                style="@style/BookClub.Button.Outlined"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="8dp"
                 android:text="Upload Book Image"
-                android:textAllCaps="false"
-                app:cornerRadius="8dp"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toBottomOf="@id/ivBookCoverPreview" />
 
             <com.google.android.material.textfield.TextInputLayout
                 android:id="@+id/tilContent"
-                style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+                style="@style/BookClub.TextInput"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="16dp"
@@ -167,13 +165,12 @@
 
     <Button
         android:id="@+id/btnPublish"
+        style="@style/BookClub.Button.Filled"
         android:layout_width="0dp"
         android:layout_height="56dp"
         android:layout_margin="24dp"
         android:text="Publish"
-        android:textAllCaps="false"
         android:textSize="18sp"
-        app:cornerRadius="12dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent" />

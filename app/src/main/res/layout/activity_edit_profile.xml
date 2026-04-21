@@ -38,7 +38,7 @@
                 android:layout_height="120dp"
                 android:padding="2dp"
                 android:scaleType="centerCrop"
-                android:src="@android:drawable/ic_menu_gallery"
+                android:src="@drawable/avatar_default"
                 android:clickable="true"
                 android:focusable="true"
                 android:background="?attr/selectableItemBackground"

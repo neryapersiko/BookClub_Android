@@ -68,13 +68,13 @@ class CommentsFragment : Fragment() {
         if (args.userImageUrl.isNotEmpty()) {
             Picasso.get()
                 .load(args.userImageUrl)
-                .placeholder(android.R.drawable.ic_menu_gallery)
-                .error(android.R.drawable.ic_menu_gallery)
+                .placeholder(R.drawable.avatar_default)
+                .error(R.drawable.avatar_default)
                 .resize(120, 120)
                 .centerCrop()
                 .into(binding.ivHeaderProfile)
         } else {
-            binding.ivHeaderProfile.setImageResource(android.R.drawable.ic_menu_gallery)
+            binding.ivHeaderProfile.setImageResource(R.drawable.avatar_default)
         }
 
         // Book author
@@ -98,14 +98,14 @@ class CommentsFragment : Fragment() {
             val coverUrl = args.bookImageUrl.replace("http://", "https://")
             Picasso.get()
                 .load(coverUrl)
-                .placeholder(android.R.drawable.ic_menu_gallery)
-                .error(android.R.drawable.ic_menu_gallery)
+                .placeholder(R.drawable.book_cover_default)
+                .error(R.drawable.book_cover_default)
                 .resize(180, 270)
                 .centerCrop()
                 .onlyScaleDown()
                 .into(binding.ivHeaderBookCover)
         } else {
-            binding.ivHeaderBookCover.setImageResource(android.R.drawable.ic_menu_gallery)
+            binding.ivHeaderBookCover.setImageResource(R.drawable.book_cover_default)
         }
     }
 
