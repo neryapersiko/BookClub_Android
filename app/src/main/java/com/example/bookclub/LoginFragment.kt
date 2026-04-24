@@ -8,14 +8,12 @@ import android.view.ViewGroup
 import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
-import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
 import com.example.bookclub.database.AppDatabase
 import com.example.bookclub.databinding.ActivityLoginBinding
 import com.example.bookclub.repository.BookRepository
 import com.example.bookclub.viewmodel.AuthViewModel
 import com.example.bookclub.viewmodel.AuthViewModelFactory
-import kotlinx.coroutines.launch
 
 class LoginFragment : Fragment() {
 
@@ -56,24 +54,24 @@ class LoginFragment : Fragment() {
         }
 
         binding.tvRegister.setOnClickListener {
-            findNavController().navigate(R.id.action_loginFragment_to_registerFragment)
+            val action = LoginFragmentDirections.actionLoginFragmentToRegisterFragment()
+            findNavController().navigate(action)
         }
     }
 
     private fun observeState() {
-        viewLifecycleOwner.lifecycleScope.launch {
-            viewModel.uiState.collect { state ->
-                binding.progressBar.visibility = if (state.isLoading) View.VISIBLE else View.GONE
-                binding.btnLogin.isEnabled = !state.isLoading
+        viewModel.uiState.observe(viewLifecycleOwner) { state ->
+            binding.progressBar.visibility = if (state.isLoading) View.VISIBLE else View.GONE
+            binding.btnLogin.isEnabled = !state.isLoading
 
-                if (state.isLoggedIn) {
-                    findNavController().navigate(R.id.action_loginFragment_to_homeFragment)
-                }
+            if (state.isLoggedIn) {
+                val action = LoginFragmentDirections.actionLoginFragmentToHomeFragment()
+                findNavController().navigate(action)
+            }
 
-                state.errorMessage?.let { message ->
-                    Toast.makeText(requireContext(), message, Toast.LENGTH_LONG).show()
-                    viewModel.clearError()
-                }
+            state.errorMessage?.let { message ->
+                Toast.makeText(requireContext(), message, Toast.LENGTH_LONG).show()
+                viewModel.clearError()
             }
         }
     }

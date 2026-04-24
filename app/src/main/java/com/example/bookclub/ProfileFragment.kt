@@ -7,19 +7,25 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.EditText
 import android.widget.LinearLayout
+import androidx.lifecycle.lifecycleScope
 import androidx.appcompat.app.AlertDialog
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.navigation.fragment.findNavController
+import androidx.navigation.fragment.navArgs
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.bookclub.adapter.PostAdapter
 import com.example.bookclub.databinding.FragmentProfileBinding
+import com.example.bookclub.di.ServiceLocator
 import com.example.bookclub.model.Post
+import com.example.bookclub.ui.nav.toCommentsNavData
+import com.example.bookclub.ui.toolbar.bindBack
 import com.example.bookclub.viewmodel.ProfileViewModel
+import com.example.bookclub.viewmodel.ProfileViewModelFactory
 import com.squareup.picasso.Callback
 import com.squareup.picasso.MemoryPolicy
-import com.squareup.picasso.NetworkPolicy
 import com.squareup.picasso.Picasso
+import kotlinx.coroutines.launch
 
 class ProfileFragment : Fragment() {
 
@@ -27,7 +33,13 @@ class ProfileFragment : Fragment() {
     private val binding get() = _binding!!
     
     private lateinit var postAdapter: PostAdapter
-    private val viewModel: ProfileViewModel by viewModels()
+    private val args: ProfileFragmentArgs by navArgs()
+    private val viewModel: ProfileViewModel by viewModels {
+        ProfileViewModelFactory(
+            repository = ServiceLocator.provideRepository(requireContext()),
+            userId = args.userId
+        )
+    }
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -53,19 +65,19 @@ class ProfileFragment : Fragment() {
 
     private fun setupRecyclerView() {
         postAdapter = PostAdapter(
-            currentUserId = viewModel.getCurrentUserId(),
+            currentUserId = ServiceLocator.provideRepository(requireContext()).getCurrentUserId(),
             onLikeClick = { /* Already handled if needed */ },
             onCommentClick = { post ->
-                val imageUrl = post.profileImageUrl.ifEmpty { post.userImageUrl }
+                val d = post.toCommentsNavData()
                 val action = ProfileFragmentDirections.actionProfileFragmentToCommentsFragment(
-                    postId = post.id,
-                    userName = post.userName,
-                    bookTitle = post.bookTitle,
-                    content = post.content,
-                    userImageUrl = imageUrl,
-                    bookAuthor = post.bookAuthor,
-                    bookPublishYear = post.bookPublishYear ?: 0,
-                    bookImageUrl = post.bookImageUrl
+                    postId = d.postId,
+                    userName = d.userName,
+                    bookTitle = d.bookTitle,
+                    content = d.content,
+                    userImageUrl = d.userImageUrl,
+                    bookAuthor = d.bookAuthor,
+                    bookPublishYear = d.bookPublishYear,
+                    bookImageUrl = d.bookImageUrl
                 )
                 findNavController().navigate(action)
             },
@@ -81,16 +93,20 @@ class ProfileFragment : Fragment() {
     }
 
     private fun setupListeners() {
-        binding.toolbar.setNavigationOnClickListener {
-            findNavController().popBackStack()
-        }
+        binding.toolbar.bindBack(findNavController())
 
         binding.btnEditProfile.setOnClickListener {
-            findNavController().navigate(R.id.action_profileFragment_to_editProfileFragment)
+            val action = ProfileFragmentDirections.actionProfileFragmentToEditProfileFragment()
+            findNavController().navigate(action)
         }
     }
 
     private fun observeViewModel() {
+        viewModel.isLoading.observe(viewLifecycleOwner) { loading ->
+            binding.progressBarProfile.visibility = if (loading) View.VISIBLE else View.GONE
+            binding.btnEditProfile.isEnabled = !loading
+        }
+
         viewModel.userName.observe(viewLifecycleOwner) { name ->
             binding.tvProfileName.text = name
         }
@@ -107,25 +123,41 @@ class ProfileFragment : Fragment() {
     }
 
     private fun loadProfileImage(url: String) {
-        Picasso.get().invalidate(url)
-        Picasso.get()
-            .load(url)
-            .memoryPolicy(MemoryPolicy.NO_CACHE, MemoryPolicy.NO_STORE)
-            .networkPolicy(NetworkPolicy.NO_CACHE)
-            .placeholder(R.drawable.avatar_default)
-            .error(R.drawable.avatar_default)
-            .resize(500, 500)
-            .centerCrop()
-            .onlyScaleDown()
-            .into(binding.ivProfileImage, object : Callback {
-                override fun onSuccess() {
-                    Log.d("Picasso", "Profile image refreshed successfully")
-                }
+        val key = "profile:${args.userId}"
+        viewLifecycleOwner.lifecycleScope.launch {
+            val localUri = ServiceLocator.provideImageRepository(requireContext())
+                .getOrFetchLocalUri(key = key, url = url)
 
-                override fun onError(e: Exception?) {
-                    Log.e("Picasso", "Error refreshing profile image: ${e?.message}")
-                }
-            })
+            if (localUri != null) {
+                Picasso.get()
+                    .load(localUri)
+                    .memoryPolicy(MemoryPolicy.NO_CACHE, MemoryPolicy.NO_STORE)
+                    .placeholder(R.drawable.avatar_default)
+                    .error(R.drawable.avatar_default)
+                    .resize(500, 500)
+                    .centerCrop()
+                    .onlyScaleDown()
+                    .into(binding.ivProfileImage, object : Callback {
+                        override fun onSuccess() {
+                            Log.d("Picasso", "Profile image loaded from cache")
+                        }
+
+                        override fun onError(e: Exception?) {
+                            Log.e("Picasso", "Error loading cached image: ${e?.message}")
+                        }
+                    })
+            } else {
+                Picasso.get()
+                    .load(url)
+                    .memoryPolicy(MemoryPolicy.NO_CACHE, MemoryPolicy.NO_STORE)
+                    .placeholder(R.drawable.avatar_default)
+                    .error(R.drawable.avatar_default)
+                    .resize(500, 500)
+                    .centerCrop()
+                    .onlyScaleDown()
+                    .into(binding.ivProfileImage)
+            }
+        }
     }
 
     private fun showDeleteConfirmation(postId: String) {

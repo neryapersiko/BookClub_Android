@@ -35,6 +35,16 @@
         app:layout_constraintTop_toBottomOf="@id/appBarLayout"
         tools:listitem="@layout/item_post" />
 
+    <ProgressBar
+        android:id="@+id/progressBarHome"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
+        android:visibility="gone"
+        app:layout_constraintBottom_toBottomOf="@id/rvPosts"
+        app:layout_constraintEnd_toEndOf="@id/rvPosts"
+        app:layout_constraintStart_toStartOf="@id/rvPosts"
+        app:layout_constraintTop_toTopOf="@id/rvPosts" />
+
     <!-- Bottom navigation bar -->
     <LinearLayout
         android:id="@+id/bottomNav"

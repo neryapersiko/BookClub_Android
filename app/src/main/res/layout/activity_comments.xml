@@ -145,6 +145,16 @@
         app:layout_constraintTop_toBottomOf="@id/cardPostHeader"
         tools:listitem="@layout/item_comment" />
 
+    <ProgressBar
+        android:id="@+id/progressBarComments"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
+        android:visibility="gone"
+        app:layout_constraintBottom_toBottomOf="@id/rvComments"
+        app:layout_constraintEnd_toEndOf="@id/rvComments"
+        app:layout_constraintStart_toStartOf="@id/rvComments"
+        app:layout_constraintTop_toTopOf="@id/rvComments" />
+
     <!-- Comment input bar -->
     <LinearLayout
         android:id="@+id/layoutInput"

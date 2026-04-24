@@ -12,13 +12,17 @@ import androidx.fragment.app.viewModels
 import androidx.navigation.fragment.findNavController
 import com.squareup.picasso.Picasso
 import com.example.bookclub.databinding.ActivityRegisterBinding
+import com.example.bookclub.di.ServiceLocator
 import com.example.bookclub.viewmodel.RegisterViewModel
+import com.example.bookclub.viewmodel.RegisterViewModelFactory
 
 class RegisterFragment : Fragment() {
 
     private var _binding: ActivityRegisterBinding? = null
     private val binding get() = _binding!!
-    private val viewModel: RegisterViewModel by viewModels()
+    private val viewModel: RegisterViewModel by viewModels {
+        RegisterViewModelFactory(ServiceLocator.provideRepository(requireContext()))
+    }
     private var selectedLocalUri: Uri? = null
 
     private val galleryLauncher = registerForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
@@ -77,7 +81,8 @@ class RegisterFragment : Fragment() {
             result?.let {
                 if (it.isSuccess) {
                     Toast.makeText(requireContext(), "Registration Successful!", Toast.LENGTH_SHORT).show()
-                    findNavController().navigate(R.id.action_registerFragment_to_homeFragment)
+                    val action = RegisterFragmentDirections.actionRegisterFragmentToHomeFragment()
+                    findNavController().navigate(action)
                 } else {
                     Toast.makeText(requireContext(), "Error: ${it.exceptionOrNull()?.message}", Toast.LENGTH_LONG).show()
                     viewModel.resetStatus()

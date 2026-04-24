@@ -6,20 +6,13 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.bookclub.model.BookDetails
-import com.example.bookclub.model.Post
 import com.example.bookclub.network.BookSearchResult
-import com.example.bookclub.network.GoogleBooksService
-import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.firestore.FirebaseFirestore
-import com.google.firebase.storage.FirebaseStorage
+import com.example.bookclub.repository.BookRepository
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.tasks.await
 
-class CreatePostViewModel : ViewModel() {
-
-    private val auth: FirebaseAuth = FirebaseAuth.getInstance()
-    private val firestore: FirebaseFirestore = FirebaseFirestore.getInstance()
-    private val storage: FirebaseStorage = FirebaseStorage.getInstance()
+class CreatePostViewModel(
+    private val repository: BookRepository
+) : ViewModel() {
 
     private val _postSaved = MutableLiveData<Boolean>()
     val postSaved: LiveData<Boolean> = _postSaved
@@ -46,7 +39,7 @@ class CreatePostViewModel : ViewModel() {
         viewModelScope.launch {
             _isAutoFillLoading.value = true
             _autoFillError.value = null
-            when (val result = GoogleBooksService.fetchBookDetails(title)) {
+            when (val result = repository.fetchBookDetails(title)) {
                 is BookSearchResult.Success -> {
                     _bookDetails.value = result.details
                     autoFilledImageUrl = result.details.imageUrl.ifEmpty { null }
@@ -76,45 +69,18 @@ class CreatePostViewModel : ViewModel() {
         viewModelScope.launch {
             _isLoading.value = true
             try {
-                val userId = auth.currentUser?.uid
-
-                if (userId != null) {
-                    val userDoc = firestore.collection("users").document(userId).get().await()
-
-                    if (userDoc.exists()) {
-                        val fetchedName = userDoc.getString("name") ?: "Anonymous"
-                        val profileImageUrl = userDoc.getString("profileImageUrl") ?: ""
-
-                        val postRef = firestore.collection("posts").document()
-
-                        val bookImageUrl = when {
-                            bookImageUri != null -> uploadBookImage(postRef.id, bookImageUri)
-                            !autoFilledImageUrl.isNullOrEmpty() -> autoFilledImageUrl!!
-                            else -> ""
-                        }
-
-                        val post = Post(
-                            id = postRef.id,
-                            userId = userId,
-                            userName = fetchedName,
-                            profileImageUrl = profileImageUrl,
-                            bookTitle = bookTitle,
-                            bookAuthor = bookAuthor,
-                            bookPublishYear = bookPublishYear,
-                            bookImageUrl = bookImageUrl,
-                            content = content,
-                            timestamp = System.currentTimeMillis(),
-                            likedBy = emptyList(),
-                            likesCount = 0
-                        )
-                        postRef.set(post).await()
-                        _postSaved.value = true
-                    } else {
-                        _errorMessage.value = "User profile not found"
-                        _postSaved.value = false
-                    }
-                } else {
-                    _errorMessage.value = "Not logged in"
+                val result = repository.createPostForCurrentUser(
+                    bookTitle = bookTitle,
+                    bookAuthor = bookAuthor,
+                    bookPublishYear = bookPublishYear,
+                    content = content,
+                    bookImageUri = bookImageUri,
+                    autoFilledImageUrl = autoFilledImageUrl
+                )
+                result.onSuccess {
+                    _postSaved.value = true
+                }.onFailure { e ->
+                    _errorMessage.value = e.message
                     _postSaved.value = false
                 }
             } catch (e: Exception) {
@@ -124,11 +90,5 @@ class CreatePostViewModel : ViewModel() {
                 _isLoading.value = false
             }
         }
-    }
-
-    private suspend fun uploadBookImage(postId: String, uri: Uri): String {
-        val ref = storage.reference.child("book_images/${postId}_${System.currentTimeMillis()}.jpg")
-        ref.putFile(uri).await()
-        return ref.downloadUrl.await().toString()
     }
 }

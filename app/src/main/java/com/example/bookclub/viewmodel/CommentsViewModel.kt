@@ -6,19 +6,19 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.bookclub.model.Comment
 import com.example.bookclub.repository.BookRepository
-import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.tasks.await
 
 class CommentsViewModel(
     private val repository: BookRepository,
     private val postId: String
 ) : ViewModel() {
-
-    private val auth = FirebaseAuth.getInstance()
-    private val firestore = FirebaseFirestore.getInstance()
     
+    private val _isLoading = MutableLiveData(true)
+    val isLoading: LiveData<Boolean> = _isLoading
+
+    private val _isSending = MutableLiveData(false)
+    val isSending: LiveData<Boolean> = _isSending
+
     private val _comments = MutableLiveData<List<Comment>>()
     val comments: LiveData<List<Comment>> = _comments
 
@@ -28,49 +28,33 @@ class CommentsViewModel(
     init {
         repository.getCommentsRealtime(postId) { commentList ->
             _comments.value = commentList
+            _isLoading.postValue(false)
         }
     }
 
     fun sendComment(text: String) {
-        val user = auth.currentUser ?: return
-        
         viewModelScope.launch {
-            try {
-                val userDoc = firestore.collection("users").document(user.uid).get().await()
-                
-                if (userDoc.exists()) {
-                    val finalName = userDoc.getString("name") ?: "Anonymous User"
-                    val profileImageUrl = userDoc.getString("profileImageUrl") ?: ""
-
-                    val comment = Comment(
-                        postId = postId,
-                        userId = user.uid,
-                        userName = finalName,
-                        profileImageUrl = profileImageUrl,
-                        content = text,
-                        timestamp = System.currentTimeMillis()
-                    )
-                    _operationStatus.value = repository.addComment(comment)
-                } else {
-                    _operationStatus.value = Result.failure(Exception("User profile not found"))
-                }
-            } catch (e: Exception) {
-                _operationStatus.value = Result.failure(e)
-            }
+            _isSending.value = true
+            _operationStatus.value = repository.addCommentForCurrentUser(postId, text)
+            _isSending.value = false
         }
     }
 
     fun deleteComment(commentId: String) {
         viewModelScope.launch {
+            _isSending.value = true
             _operationStatus.value = repository.deleteComment(postId, commentId)
+            _isSending.value = false
         }
     }
 
     fun editComment(commentId: String, newContent: String) {
         viewModelScope.launch {
+            _isSending.value = true
             _operationStatus.value = repository.updateComment(postId, commentId, newContent)
+            _isSending.value = false
         }
     }
     
-    fun getCurrentUserId(): String? = auth.currentUser?.uid
+    fun getCurrentUserId(): String? = repository.getCurrentUserId()
 }

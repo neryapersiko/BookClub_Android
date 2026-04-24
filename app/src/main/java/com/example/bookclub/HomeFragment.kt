@@ -8,11 +8,12 @@ import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.SimpleItemAnimator
 import com.example.bookclub.adapter.PostAdapter
 import com.example.bookclub.databinding.FragmentHomeBinding
+import com.example.bookclub.ui.nav.toCommentsNavData
 import com.example.bookclub.viewmodel.HomeViewModel
 import com.example.bookclub.viewmodel.HomeViewModelFactory
-import com.google.firebase.auth.FirebaseAuth
 
 class HomeFragment : Fragment() {
 
@@ -20,7 +21,6 @@ class HomeFragment : Fragment() {
     private val binding get() = _binding!!
     
     private lateinit var postAdapter: PostAdapter
-    private val auth = FirebaseAuth.getInstance()
     
     private val viewModel: HomeViewModel by viewModels {
         HomeViewModelFactory(requireContext())
@@ -39,7 +39,7 @@ class HomeFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
 
         // Ensure we handle authentication before setting up the UI
-        if (auth.currentUser == null) {
+        if (!viewModel.isLoggedIn()) {
             navigateToLogin()
             return
         }
@@ -50,11 +50,12 @@ class HomeFragment : Fragment() {
     }
 
     private fun navigateToLogin() {
-        findNavController().navigate(R.id.action_homeFragment_to_loginFragment)
+        val action = HomeFragmentDirections.actionHomeFragmentToLoginFragment()
+        findNavController().navigate(action)
     }
 
     private fun setupRecyclerView() {
-        val currentUserId = auth.currentUser?.uid
+        val currentUserId = viewModel.getCurrentUserId()
         postAdapter = PostAdapter(
             currentUserId = currentUserId,
             onLikeClick = { post ->
@@ -63,16 +64,16 @@ class HomeFragment : Fragment() {
                 }
             },
             onCommentClick = { post ->
-                val imageUrl = post.profileImageUrl.ifEmpty { post.userImageUrl }
+                val d = post.toCommentsNavData()
                 val action = HomeFragmentDirections.actionHomeFragmentToCommentsFragment(
-                    postId = post.id,
-                    userName = post.userName,
-                    bookTitle = post.bookTitle,
-                    content = post.content,
-                    userImageUrl = imageUrl,
-                    bookAuthor = post.bookAuthor,
-                    bookPublishYear = post.bookPublishYear ?: 0,
-                    bookImageUrl = post.bookImageUrl
+                    postId = d.postId,
+                    userName = d.userName,
+                    bookTitle = d.bookTitle,
+                    content = d.content,
+                    userImageUrl = d.userImageUrl,
+                    bookAuthor = d.bookAuthor,
+                    bookPublishYear = d.bookPublishYear,
+                    bookImageUrl = d.bookImageUrl
                 )
                 findNavController().navigate(action)
             }
@@ -81,29 +82,41 @@ class HomeFragment : Fragment() {
             adapter = postAdapter
             layoutManager = LinearLayoutManager(requireContext())
             setHasFixedSize(true)
+            (itemAnimator as? SimpleItemAnimator)?.supportsChangeAnimations = false
         }
     }
 
     private fun setupListeners() {
         binding.btnAddPost.setOnClickListener {
-            findNavController().navigate(R.id.action_homeFragment_to_addPostFragment)
+            val action = HomeFragmentDirections.actionHomeFragmentToAddPostFragment()
+            findNavController().navigate(action)
         }
 
         binding.btnProfile.setOnClickListener {
-            val currentUserId = auth.currentUser?.uid ?: ""
+            val currentUserId = viewModel.getCurrentUserId() ?: ""
             val action = HomeFragmentDirections.actionHomeFragmentToProfileFragment(currentUserId)
             findNavController().navigate(action)
         }
 
         binding.btnLogout.setOnClickListener {
-            auth.signOut()
+            viewModel.logout()
             navigateToLogin()
         }
     }
 
     private fun observeViewModel() {
+        viewModel.isLoading.observe(viewLifecycleOwner) { loading ->
+            binding.progressBarHome.visibility = if (loading) View.VISIBLE else View.GONE
+        }
+
         viewModel.posts.observe(viewLifecycleOwner) { posts ->
-            postAdapter.submitList(posts)
+            val lm = binding.rvPosts.layoutManager
+            val state = lm?.onSaveInstanceState()
+            postAdapter.submitList(posts) {
+                binding.rvPosts.post {
+                    lm?.onRestoreInstanceState(state)
+                }
+            }
         }
     }
 

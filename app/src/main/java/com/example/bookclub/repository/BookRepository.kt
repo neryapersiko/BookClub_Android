@@ -3,13 +3,18 @@ package com.example.bookclub.repository
 import androidx.lifecycle.LiveData
 import com.example.bookclub.database.PostDao
 import com.example.bookclub.model.Comment
+import com.example.bookclub.model.BookDetails
 import com.example.bookclub.model.Post
 import com.example.bookclub.model.User
+import com.example.bookclub.network.BookSearchResult
+import com.example.bookclub.network.GoogleBooksService
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.Query
+import com.google.firebase.storage.FirebaseStorage
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.withContext
@@ -18,8 +23,19 @@ import kotlinx.coroutines.withTimeoutOrNull
 class BookRepository(
     private val postDao: PostDao,
     private val auth: FirebaseAuth = FirebaseAuth.getInstance(),
-    private val firestore: FirebaseFirestore = FirebaseFirestore.getInstance()
+    private val firestore: FirebaseFirestore = FirebaseFirestore.getInstance(),
+    private val storage: FirebaseStorage = FirebaseStorage.getInstance()
 ) {
+    // Repository-owned scope for long-running listeners (Firestore snapshot listeners).
+    private val repoScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+
+    fun isLoggedIn(): Boolean = auth.currentUser != null
+
+    fun getCurrentUserId(): String? = auth.currentUser?.uid
+
+    fun logout() {
+        auth.signOut()
+    }
 
     /**
      * Returns LiveData from Room. This is the Single Source of Truth for the UI.
@@ -32,15 +48,9 @@ class BookRepository(
      * Manually updates the local Room database for the current user's profile image.
      * This forces the Room LiveData to emit a new value immediately.
      */
-    fun updateLocalUserProfile(newImageUrl: String) {
-        val uid = auth.currentUser?.uid ?: return
-        CoroutineScope(Dispatchers.IO).launch {
-            postDao.updateProfileImageForUser(uid, newImageUrl)
-            
-            // To ensure Room triggers a re-emission if the update above isn't enough,
-            // we could potentially re-insert or touch the table, but the UPDATE query 
-            // on an observed table should be sufficient for Room to notify observers.
-        }
+    suspend fun updateLocalUserProfile(newImageUrl: String) = withContext(Dispatchers.IO) {
+        val uid = auth.currentUser?.uid ?: return@withContext
+        postDao.updateProfileImageForUser(uid, newImageUrl)
     }
 
     /**
@@ -52,13 +62,11 @@ class BookRepository(
             .addSnapshotListener { snapshot, e ->
                 if (e != null) return@addSnapshotListener
                 
-                CoroutineScope(Dispatchers.IO).launch {
+                repoScope.launch {
                     snapshot?.let {
                         val posts = it.toObjects(Post::class.java)
-                        // Using a transaction-like approach: delete then insert.
-                        // Room will notify observers once the operations are complete.
-                        postDao.deleteAllPosts()
-                        postDao.insertPosts(posts)
+                        // Atomic upsert + delete missing IDs (prevents transient empty emissions)
+                        postDao.replaceWithUpsert(posts)
                     }
                 }
             }
@@ -73,6 +81,52 @@ class BookRepository(
                 firestore.collection("users").document(uid).set(userWithId).await()
                 Result.success(userWithId)
             } ?: Result.failure(Exception("Operation timed out. Check your connection."))
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    suspend fun registerUserWithProfileImage(
+        name: String,
+        email: String,
+        pass: String,
+        localProfileImageUri: android.net.Uri?
+    ): Result<Unit> = withContext(Dispatchers.IO) {
+        return@withContext try {
+            val authResult = auth.createUserWithEmailAndPassword(email, pass).await()
+            val uid = authResult.user?.uid ?: throw Exception("User creation failed")
+
+            val finalImageUrl = if (localProfileImageUri != null) {
+                val ref = storage.reference.child("profile_images/${uid}_${System.currentTimeMillis()}.jpg")
+                ref.putFile(localProfileImageUri).await()
+                ref.downloadUrl.await().toString()
+            } else {
+                ""
+            }
+
+            val userMap = mapOf(
+                "id" to uid,
+                "name" to name,
+                "email" to email,
+                "profileImageUrl" to finalImageUrl
+            )
+            firestore.collection("users").document(uid).set(userMap).await()
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    suspend fun getUserProfile(uid: String): Result<Pair<String, String>> = withContext(Dispatchers.IO) {
+        return@withContext try {
+            val doc = firestore.collection("users").document(uid).get().await()
+            if (!doc.exists()) {
+                Result.failure(Exception("User not found"))
+            } else {
+                val name = doc.getString("name") ?: "No Name"
+                val profileImageUrl = doc.getString("profileImageUrl") ?: ""
+                Result.success(name to profileImageUrl)
+            }
         } catch (e: Exception) {
             Result.failure(e)
         }
@@ -152,6 +206,24 @@ class BookRepository(
             val commentWithId = comment.copy(id = commentRef.id)
             commentRef.set(commentWithId).await()
             Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    suspend fun addCommentForCurrentUser(postId: String, content: String): Result<Unit> = withContext(Dispatchers.IO) {
+        return@withContext try {
+            val user = auth.currentUser ?: throw Exception("Not authenticated")
+            val (name, profileImageUrl) = getUserProfile(user.uid).getOrElse { throw it }
+            val comment = Comment(
+                postId = postId,
+                userId = user.uid,
+                userName = name,
+                profileImageUrl = profileImageUrl,
+                content = content,
+                timestamp = System.currentTimeMillis()
+            )
+            addComment(comment)
         } catch (e: Exception) {
             Result.failure(e)
         }
@@ -237,5 +309,54 @@ class BookRepository(
         } catch (e: Exception) {
             Result.failure(e)
         }
+    }
+
+    suspend fun createPostForCurrentUser(
+        bookTitle: String,
+        bookAuthor: String,
+        bookPublishYear: Int?,
+        content: String,
+        bookImageUri: android.net.Uri?,
+        autoFilledImageUrl: String?
+    ): Result<Unit> = withContext(Dispatchers.IO) {
+        return@withContext try {
+            val userId = auth.currentUser?.uid ?: throw Exception("Not logged in")
+            val (name, profileImageUrl) = getUserProfile(userId).getOrElse { throw it }
+
+            val postRef = firestore.collection("posts").document()
+            val bookImageUrl = when {
+                bookImageUri != null -> {
+                    val ref = storage.reference.child("book_images/${postRef.id}_${System.currentTimeMillis()}.jpg")
+                    ref.putFile(bookImageUri).await()
+                    ref.downloadUrl.await().toString()
+                }
+                !autoFilledImageUrl.isNullOrEmpty() -> autoFilledImageUrl
+                else -> ""
+            }
+
+            val post = Post(
+                id = postRef.id,
+                userId = userId,
+                userName = name,
+                profileImageUrl = profileImageUrl,
+                bookTitle = bookTitle,
+                bookAuthor = bookAuthor,
+                bookPublishYear = bookPublishYear,
+                bookImageUrl = bookImageUrl,
+                content = content,
+                timestamp = System.currentTimeMillis(),
+                likedBy = emptyList(),
+                likesCount = 0
+            )
+
+            postRef.set(post).await()
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    suspend fun fetchBookDetails(title: String): BookSearchResult = withContext(Dispatchers.IO) {
+        GoogleBooksService.fetchBookDetails(title)
     }
 }

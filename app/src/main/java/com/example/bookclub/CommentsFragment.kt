@@ -6,18 +6,20 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.EditText
 import android.widget.Toast
+import androidx.lifecycle.lifecycleScope
 import androidx.appcompat.app.AlertDialog
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.navigation.fragment.findNavController
 import androidx.navigation.fragment.navArgs
 import com.example.bookclub.adapter.CommentAdapter
-import com.example.bookclub.database.AppDatabase
 import com.example.bookclub.databinding.ActivityCommentsBinding
-import com.example.bookclub.repository.BookRepository
+import com.example.bookclub.di.ServiceLocator
+import com.example.bookclub.ui.toolbar.bindBack
 import com.example.bookclub.viewmodel.CommentsViewModel
 import com.example.bookclub.viewmodel.CommentsViewModelFactory
 import com.squareup.picasso.Picasso
+import kotlinx.coroutines.launch
 
 class CommentsFragment : Fragment() {
 
@@ -28,8 +30,7 @@ class CommentsFragment : Fragment() {
     private val args: CommentsFragmentArgs by navArgs()
     
     private val viewModel: CommentsViewModel by viewModels {
-        val database = AppDatabase.getDatabase(requireContext())
-        CommentsViewModelFactory(BookRepository(database.postDao()), args.postId)
+        CommentsViewModelFactory(ServiceLocator.provideRepository(requireContext()), args.postId)
     }
 
     override fun onCreateView(
@@ -53,9 +54,7 @@ class CommentsFragment : Fragment() {
 
     private fun setupActionBar() {
         binding.toolbar.setNavigationIcon(androidx.appcompat.R.drawable.abc_ic_ab_back_material)
-        binding.toolbar.setNavigationOnClickListener {
-            findNavController().popBackStack()
-        }
+        binding.toolbar.bindBack(findNavController())
         binding.toolbar.title = "Comments"
     }
 
@@ -66,13 +65,22 @@ class CommentsFragment : Fragment() {
 
         // User profile image
         if (args.userImageUrl.isNotEmpty()) {
-            Picasso.get()
-                .load(args.userImageUrl)
-                .placeholder(R.drawable.avatar_default)
-                .error(R.drawable.avatar_default)
-                .resize(120, 120)
-                .centerCrop()
-                .into(binding.ivHeaderProfile)
+            val key = "url:${args.userImageUrl}"
+            viewLifecycleOwner.lifecycleScope.launch {
+                val localUri = ServiceLocator.provideImageRepository(requireContext())
+                    .getOrFetchLocalUri(key = key, url = args.userImageUrl)
+                val request = if (localUri != null) {
+                    Picasso.get().load(localUri)
+                } else {
+                    Picasso.get().load(args.userImageUrl)
+                }
+                request
+                    .placeholder(R.drawable.avatar_default)
+                    .error(R.drawable.avatar_default)
+                    .resize(120, 120)
+                    .centerCrop()
+                    .into(binding.ivHeaderProfile)
+            }
         } else {
             binding.ivHeaderProfile.setImageResource(R.drawable.avatar_default)
         }
@@ -96,14 +104,23 @@ class CommentsFragment : Fragment() {
         // Book cover image
         if (args.bookImageUrl.isNotEmpty()) {
             val coverUrl = args.bookImageUrl.replace("http://", "https://")
-            Picasso.get()
-                .load(coverUrl)
-                .placeholder(R.drawable.book_cover_default)
-                .error(R.drawable.book_cover_default)
-                .resize(180, 270)
-                .centerCrop()
-                .onlyScaleDown()
-                .into(binding.ivHeaderBookCover)
+            val key = "url:$coverUrl"
+            viewLifecycleOwner.lifecycleScope.launch {
+                val localUri = ServiceLocator.provideImageRepository(requireContext())
+                    .getOrFetchLocalUri(key = key, url = coverUrl)
+                val request = if (localUri != null) {
+                    Picasso.get().load(localUri)
+                } else {
+                    Picasso.get().load(coverUrl)
+                }
+                request
+                    .placeholder(R.drawable.book_cover_default)
+                    .error(R.drawable.book_cover_default)
+                    .resize(180, 270)
+                    .centerCrop()
+                    .onlyScaleDown()
+                    .into(binding.ivHeaderBookCover)
+            }
         } else {
             binding.ivHeaderBookCover.setImageResource(R.drawable.book_cover_default)
         }
@@ -129,6 +146,15 @@ class CommentsFragment : Fragment() {
     }
 
     private fun observeViewModel() {
+        viewModel.isLoading.observe(viewLifecycleOwner) { loading ->
+            binding.progressBarComments.visibility = if (loading) View.VISIBLE else View.GONE
+        }
+
+        viewModel.isSending.observe(viewLifecycleOwner) { sending ->
+            binding.btnSend.isEnabled = !sending
+            binding.etComment.isEnabled = !sending
+        }
+
         viewModel.comments.observe(viewLifecycleOwner) { list ->
             commentAdapter.submitList(list)
             if (list.isNotEmpty()) {

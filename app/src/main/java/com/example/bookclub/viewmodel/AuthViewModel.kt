@@ -1,13 +1,11 @@
 package com.example.bookclub.viewmodel
 
+import androidx.lifecycle.LiveData
+import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.bookclub.model.User
 import com.example.bookclub.repository.BookRepository
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 data class AuthUiState(
@@ -18,23 +16,23 @@ data class AuthUiState(
 
 class AuthViewModel(private val repository: BookRepository) : ViewModel() {
 
-    private val _uiState = MutableStateFlow(AuthUiState())
-    val uiState: StateFlow<AuthUiState> = _uiState.asStateFlow()
+    private val _uiState = MutableLiveData(AuthUiState())
+    val uiState: LiveData<AuthUiState> = _uiState
 
     /**
      * Registers a new user with the provided name, email, and password.
      */
     fun register(name: String, email: String, pass: String) {
         viewModelScope.launch {
-            _uiState.update { it.copy(isLoading = true, errorMessage = null) }
+            _uiState.value = _uiState.value?.copy(isLoading = true, errorMessage = null) ?: AuthUiState(isLoading = true)
             
             val user = User(name = name, email = email)
             val result = repository.registerUser(user, pass)
             
             result.onSuccess {
-                _uiState.update { it.copy(isLoading = false, isLoggedIn = true) }
+                _uiState.value = (_uiState.value ?: AuthUiState()).copy(isLoading = false, isLoggedIn = true)
             }.onFailure { exception ->
-                _uiState.update { it.copy(isLoading = false, errorMessage = exception.message) }
+                _uiState.value = (_uiState.value ?: AuthUiState()).copy(isLoading = false, errorMessage = exception.message)
             }
         }
     }
@@ -44,14 +42,14 @@ class AuthViewModel(private val repository: BookRepository) : ViewModel() {
      */
     fun login(email: String, pass: String) {
         viewModelScope.launch {
-            _uiState.update { it.copy(isLoading = true, errorMessage = null) }
+            _uiState.value = _uiState.value?.copy(isLoading = true, errorMessage = null) ?: AuthUiState(isLoading = true)
             
             val result = repository.loginUser(email, pass)
             
             result.onSuccess {
-                _uiState.update { it.copy(isLoading = false, isLoggedIn = true) }
+                _uiState.value = (_uiState.value ?: AuthUiState()).copy(isLoading = false, isLoggedIn = true)
             }.onFailure { exception ->
-                _uiState.update { it.copy(isLoading = false, errorMessage = exception.message) }
+                _uiState.value = (_uiState.value ?: AuthUiState()).copy(isLoading = false, errorMessage = exception.message)
             }
         }
     }
@@ -60,6 +58,6 @@ class AuthViewModel(private val repository: BookRepository) : ViewModel() {
      * Resets the error message in the UI state.
      */
     fun clearError() {
-        _uiState.update { it.copy(errorMessage = null) }
+        _uiState.value = (_uiState.value ?: AuthUiState()).copy(errorMessage = null)
     }
 }

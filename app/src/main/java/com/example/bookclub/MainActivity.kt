@@ -5,7 +5,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.navigation.NavController
 import androidx.navigation.fragment.NavHostFragment
 import com.example.bookclub.databinding.ActivityMainBinding
-import com.google.firebase.auth.FirebaseAuth
+import com.example.bookclub.di.ServiceLocator
 
 class MainActivity : AppCompatActivity() {
 
@@ -31,7 +31,8 @@ class MainActivity : AppCompatActivity() {
         val graph = navInflater.inflate(R.navigation.nav_graph)
         
         // Dynamic Start Destination: Home if logged in, Login if not
-        if (FirebaseAuth.getInstance().currentUser != null) {
+        val repository = ServiceLocator.provideRepository(this)
+        if (repository.isLoggedIn()) {
             graph.setStartDestination(R.id.homeFragment)
         } else {
             graph.setStartDestination(R.id.loginFragment)

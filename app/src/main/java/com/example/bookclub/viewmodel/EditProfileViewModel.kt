@@ -6,13 +6,17 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.bookclub.repository.BookRepository
+import com.example.bookclub.repository.ImageRepository
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.storage.FirebaseStorage
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 
-class EditProfileViewModel(private val repository: BookRepository) : ViewModel() {
+class EditProfileViewModel(
+    private val repository: BookRepository,
+    private val imageRepository: ImageRepository
+) : ViewModel() {
 
     private val auth = FirebaseAuth.getInstance()
     private val firestore = FirebaseFirestore.getInstance()
@@ -76,6 +80,9 @@ class EditProfileViewModel(private val repository: BookRepository) : ViewModel()
                 currentImageUrl?.let {
                     repository.updateLocalUserProfile(it)
                 }
+
+                // Invalidate Room-backed cached image so Profile screen re-fetches newest URL
+                imageRepository.invalidate("profile:$uid")
                 
                 _updateResult.value = Result.success(Unit)
             } catch (e: Exception) {

@@ -5,6 +5,7 @@ import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
+import androidx.room.Transaction
 import com.example.bookclub.model.Post
 
 @Dao
@@ -18,6 +19,19 @@ interface PostDao {
     @Query("DELETE FROM posts")
     suspend fun deleteAllPosts()
 
+    @Query("DELETE FROM posts WHERE id NOT IN (:ids)")
+    suspend fun deletePostsNotIn(ids: List<String>)
+
     @Query("UPDATE posts SET profileImageUrl = :newImageUrl WHERE userId = :userId")
     suspend fun updateProfileImageForUser(userId: String, newImageUrl: String)
+
+    @Transaction
+    suspend fun replaceWithUpsert(posts: List<Post>) {
+        if (posts.isEmpty()) {
+            deleteAllPosts()
+            return
+        }
+        insertPosts(posts)
+        deletePostsNotIn(posts.map { it.id })
+    }
 }

@@ -3,6 +3,7 @@ package com.example.bookclub.adapter
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.ImageView
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
@@ -10,6 +11,12 @@ import com.example.bookclub.databinding.ItemPostBinding
 import com.example.bookclub.R
 import com.example.bookclub.model.Post
 import com.squareup.picasso.Picasso
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.launch
+import com.example.bookclub.ui.images.CachedImageLoader
+import java.util.UUID
 
 class PostAdapter(
     private val currentUserId: String?,
@@ -18,6 +25,12 @@ class PostAdapter(
     private val onEditClick: ((Post) -> Unit)? = null,
     private val onDeleteClick: ((Post) -> Unit)? = null
 ) : ListAdapter<Post, PostAdapter.PostViewHolder>(PostDiffCallback()) {
+
+    private val imageScope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
+
+    init {
+        setHasStableIds(true)
+    }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): PostViewHolder {
         val binding = ItemPostBinding.inflate(LayoutInflater.from(parent.context), parent, false)
@@ -28,23 +41,42 @@ class PostAdapter(
         holder.bind(getItem(position))
     }
 
+    override fun onBindViewHolder(holder: PostViewHolder, position: Int, payloads: MutableList<Any>) {
+        if (payloads.isEmpty()) {
+            onBindViewHolder(holder, position)
+            return
+        }
+
+        val payload = payloads.lastOrNull()
+        if (payload is LikePayload) {
+            holder.bindLike(payload.likesCount, payload.likedBy, payload.likes)
+        } else {
+            onBindViewHolder(holder, position)
+        }
+    }
+
+    override fun getItemId(position: Int): Long {
+        // Stable, collision-resistant ID derived from post.id
+        return UUID.nameUUIDFromBytes(getItem(position).id.toByteArray()).mostSignificantBits
+    }
+
     inner class PostViewHolder(private val binding: ItemPostBinding) : RecyclerView.ViewHolder(binding.root) {
         fun bind(post: Post) {
             // User header
             binding.tvAuthorName.text = post.userName
-            binding.tvLikesCount.text = post.likesCount.toString()
+            bindLike(post.likesCount, post.likedBy, post.likes)
 
             // User profile image
             val profileUrl = post.profileImageUrl.ifEmpty { post.userImageUrl }
             if (profileUrl.isNotEmpty()) {
-                Picasso.get()
-                    .load(profileUrl)
-                    .placeholder(R.drawable.avatar_default)
-                    .error(R.drawable.avatar_default)
-                    .resize(120, 120)
-                    .centerCrop()
-                    .onlyScaleDown()
-                    .into(binding.ivAuthorProfile)
+                val key = "profile:${post.userId}"
+                CachedImageLoader.load(
+                    scope = imageScope,
+                    imageView = binding.ivAuthorProfile,
+                    cacheKey = key,
+                    url = profileUrl,
+                    placeholder = R.drawable.avatar_default
+                ) { it.resize(120, 120).centerCrop().onlyScaleDown() }
             } else {
                 binding.ivAuthorProfile.setImageResource(R.drawable.avatar_default)
             }
@@ -69,14 +101,14 @@ class PostAdapter(
             // Book cover image
             if (post.bookImageUrl.isNotEmpty()) {
                 val coverUrl = post.bookImageUrl.replace("http://", "https://")
-                Picasso.get()
-                    .load(coverUrl)
-                    .placeholder(R.drawable.book_cover_default)
-                    .error(R.drawable.book_cover_default)
-                    .resize(240, 360)
-                    .centerCrop()
-                    .onlyScaleDown()
-                    .into(binding.ivBookCover)
+                val key = "book:${post.id}"
+                CachedImageLoader.load(
+                    scope = imageScope,
+                    imageView = binding.ivBookCover,
+                    cacheKey = key,
+                    url = coverUrl,
+                    placeholder = R.drawable.book_cover_default
+                ) { it.resize(240, 360).centerCrop().onlyScaleDown() }
             } else {
                 binding.ivBookCover.setImageResource(R.drawable.book_cover_default)
             }
@@ -94,7 +126,16 @@ class PostAdapter(
             }
 
             // Like button state
-            val isLiked = currentUserId != null && (post.likedBy.contains(currentUserId) || post.likes?.contains(currentUserId) == true)
+            // Click listeners
+            binding.btnLike.setOnClickListener { onLikeClick(post) }
+            binding.btnComment.setOnClickListener { onCommentClick(post) }
+            binding.root.setOnClickListener { onCommentClick(post) }
+        }
+
+        fun bindLike(likesCount: Int, likedBy: List<String>, likes: List<String>?) {
+            binding.tvLikesCount.text = likesCount.toString()
+
+            val isLiked = currentUserId != null && (likedBy.contains(currentUserId) || likes?.contains(currentUserId) == true)
             val context = binding.root.context
             if (isLiked) {
                 val likeColor = context.getColor(R.color.like_red)
@@ -105,16 +146,34 @@ class PostAdapter(
                 binding.btnLike.setIconTintResource(R.color.text_secondary)
                 binding.btnLike.setTextColor(secondaryColor)
             }
-
-            // Click listeners
-            binding.btnLike.setOnClickListener { onLikeClick(post) }
-            binding.btnComment.setOnClickListener { onCommentClick(post) }
-            binding.root.setOnClickListener { onCommentClick(post) }
         }
     }
 
-    class PostDiffCallback : DiffUtil.ItemCallback<Post>() {
+    private data class LikePayload(
+        val likesCount: Int,
+        val likedBy: List<String>,
+        val likes: List<String>?
+    )
+
+    private class PostDiffCallback : DiffUtil.ItemCallback<Post>() {
         override fun areItemsTheSame(oldItem: Post, newItem: Post): Boolean = oldItem.id == newItem.id
         override fun areContentsTheSame(oldItem: Post, newItem: Post): Boolean = oldItem == newItem
+
+        override fun getChangePayload(oldItem: Post, newItem: Post): Any? {
+            val likeChanged =
+                oldItem.likesCount != newItem.likesCount ||
+                    oldItem.likedBy != newItem.likedBy ||
+                    oldItem.likes != newItem.likes
+
+            return if (likeChanged) {
+                LikePayload(
+                    likesCount = newItem.likesCount,
+                    likedBy = newItem.likedBy,
+                    likes = newItem.likes
+                )
+            } else {
+                null
+            }
+        }
     }
 }

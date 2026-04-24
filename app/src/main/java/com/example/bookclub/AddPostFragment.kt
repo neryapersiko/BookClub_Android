@@ -11,14 +11,19 @@ import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.navigation.fragment.findNavController
 import com.example.bookclub.databinding.ActivityAddPostBinding
+import com.example.bookclub.di.ServiceLocator
+import com.example.bookclub.ui.toolbar.bindBack
 import com.example.bookclub.viewmodel.CreatePostViewModel
+import com.example.bookclub.viewmodel.CreatePostViewModelFactory
 import com.squareup.picasso.Picasso
 
 class AddPostFragment : Fragment() {
 
     private var _binding: ActivityAddPostBinding? = null
     private val binding get() = _binding!!
-    private val viewModel: CreatePostViewModel by viewModels()
+    private val viewModel: CreatePostViewModel by viewModels {
+        CreatePostViewModelFactory(ServiceLocator.provideRepository(requireContext()))
+    }
     private var selectedBookImageUri: Uri? = null
     private var isImageRemoved = false
 
@@ -50,9 +55,7 @@ class AddPostFragment : Fragment() {
 
     private fun setupActionBar() {
         binding.toolbar.setNavigationIcon(androidx.appcompat.R.drawable.abc_ic_ab_back_material)
-        binding.toolbar.setNavigationOnClickListener {
-            findNavController().popBackStack()
-        }
+        binding.toolbar.bindBack(findNavController())
     }
 
     private fun setupListeners() {
