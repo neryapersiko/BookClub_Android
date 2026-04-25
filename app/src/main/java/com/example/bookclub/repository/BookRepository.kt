@@ -44,6 +44,10 @@ class BookRepository(
         return postDao.getAllPosts()
     }
 
+    fun getPostById(postId: String): LiveData<Post?> {
+        return postDao.getPostById(postId)
+    }
+
     /**
      * Manually updates the local Room database for the current user's profile image.
      * This forces the Room LiveData to emit a new value immediately.
@@ -306,6 +310,42 @@ class BookRepository(
             } else {
                 throw Exception("Unauthorized")
             }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    suspend fun updatePostWithOptionalImage(
+        postId: String,
+        newTitle: String,
+        newAuthor: String,
+        newYear: Int?,
+        newContent: String,
+        newLocalImageUri: android.net.Uri?
+    ): Result<Unit> = withContext(Dispatchers.IO) {
+        return@withContext try {
+            val currentUserId = auth.currentUser?.uid ?: throw Exception("Not authenticated")
+            val postRef = firestore.collection("posts").document(postId)
+            val snapshot = postRef.get().await()
+            val post = snapshot.toObject(Post::class.java)
+
+            if (post?.userId != currentUserId) throw Exception("Unauthorized")
+
+            val updates = mutableMapOf<String, Any?>(
+                "bookTitle" to newTitle,
+                "bookAuthor" to newAuthor,
+                "bookPublishYear" to newYear,
+                "content" to newContent
+            )
+
+            if (newLocalImageUri != null) {
+                val ref = storage.reference.child("book_images/${postId}_${System.currentTimeMillis()}.jpg")
+                ref.putFile(newLocalImageUri).await()
+                updates["bookImageUrl"] = ref.downloadUrl.await().toString()
+            }
+
+            postRef.update(updates).await()
+            Result.success(Unit)
         } catch (e: Exception) {
             Result.failure(e)
         }

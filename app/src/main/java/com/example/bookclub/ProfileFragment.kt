@@ -5,8 +5,6 @@ import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.EditText
-import android.widget.LinearLayout
 import androidx.lifecycle.lifecycleScope
 import androidx.appcompat.app.AlertDialog
 import androidx.fragment.app.Fragment
@@ -17,7 +15,6 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.bookclub.adapter.PostAdapter
 import com.example.bookclub.databinding.FragmentProfileBinding
 import com.example.bookclub.di.ServiceLocator
-import com.example.bookclub.model.Post
 import com.example.bookclub.ui.nav.toCommentsNavData
 import com.example.bookclub.ui.toolbar.bindBack
 import com.example.bookclub.viewmodel.ProfileViewModel
@@ -81,7 +78,10 @@ class ProfileFragment : Fragment() {
                 )
                 findNavController().navigate(action)
             },
-            onEditClick = { post -> showEditDialog(post) },
+            onEditClick = { post ->
+                val action = ProfileFragmentDirections.actionProfileFragmentToEditPostFragment(post.id)
+                findNavController().navigate(action)
+            },
             onDeleteClick = { post -> showDeleteConfirmation(post.id) }
         )
         binding.rvMyPosts.apply {
@@ -166,50 +166,6 @@ class ProfileFragment : Fragment() {
             .setMessage("Are you sure you want to delete this post?")
             .setPositiveButton("Delete") { _, _ ->
                 viewModel.deletePost(postId)
-            }
-            .setNegativeButton("Cancel", null)
-            .show()
-    }
-
-    private fun showEditDialog(post: Post) {
-        val layout = LinearLayout(requireContext())
-        layout.orientation = LinearLayout.VERTICAL
-        layout.setPadding(50, 20, 50, 0)
-
-        val etTitle = EditText(requireContext())
-        etTitle.hint = "Book Title"
-        etTitle.setText(post.bookTitle)
-        layout.addView(etTitle)
-
-        val etAuthor = EditText(requireContext())
-        etAuthor.hint = "Book Author"
-        etAuthor.setText(post.bookAuthor)
-        layout.addView(etAuthor)
-
-        val etYear = EditText(requireContext())
-        etYear.hint = "Publish Year"
-        etYear.inputType = android.text.InputType.TYPE_CLASS_NUMBER
-        if (post.bookPublishYear != null) {
-            etYear.setText(post.bookPublishYear.toString())
-        }
-        layout.addView(etYear)
-
-        val etContent = EditText(requireContext())
-        etContent.hint = "Content"
-        etContent.setText(post.content)
-        layout.addView(etContent)
-
-        AlertDialog.Builder(requireContext())
-            .setTitle("Edit Post")
-            .setView(layout)
-            .setPositiveButton("Update") { _, _ ->
-                val newTitle = etTitle.text.toString().trim()
-                val newAuthor = etAuthor.text.toString().trim()
-                val newYear = etYear.text.toString().trim().toIntOrNull()
-                val newContent = etContent.text.toString().trim()
-                if (newTitle.isNotEmpty() && newContent.isNotEmpty()) {
-                    viewModel.updatePost(post.id, newTitle, newAuthor, newYear, newContent)
-                }
             }
             .setNegativeButton("Cancel", null)
             .show()

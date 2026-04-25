@@ -38,6 +38,9 @@
             android:id="@+id/action_profileFragment_to_editProfileFragment"
             app:destination="@id/editProfileFragment" />
         <action
+            android:id="@+id/action_profileFragment_to_editPostFragment"
+            app:destination="@id/editPostFragment" />
+        <action
             android:id="@+id/action_profileFragment_to_commentsFragment"
             app:destination="@id/commentsFragment" />
     </fragment>
@@ -47,6 +50,16 @@
         android:name="com.example.bookclub.EditProfileFragment"
         android:label="Edit Profile"
         tools:layout="@layout/fragment_edit_profile" />
+
+    <fragment
+        android:id="@+id/editPostFragment"
+        android:name="com.example.bookclub.EditPostFragment"
+        android:label="Edit Post"
+        tools:layout="@layout/fragment_edit_post">
+        <argument
+            android:name="postId"
+            app:argType="string" />
+    </fragment>
 
     <fragment
         android:id="@+id/loginFragment"
