@@ -1,5 +1,6 @@
 package com.example.bookclub.repository
 
+import android.net.Uri
 import androidx.lifecycle.LiveData
 import com.example.bookclub.database.PostDao
 import com.example.bookclub.model.Comment
@@ -135,6 +136,47 @@ class BookRepository(
             Result.failure(e)
         }
     }
+
+    suspend fun getCurrentUserProfile(): Result<Map<String, String?>> = withContext(Dispatchers.IO) {
+        return@withContext try {
+            val uid = auth.currentUser?.uid ?: throw Exception("Not authenticated")
+            val doc = firestore.collection("users").document(uid).get().await()
+            if (!doc.exists()) {
+                Result.failure(Exception("User not found"))
+            } else {
+                Result.success(
+                    mapOf(
+                        "name" to doc.getString("name"),
+                        "profileImageUrl" to doc.getString("profileImageUrl")
+                    )
+                )
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    suspend fun updateCurrentUserProfile(name: String, newLocalUri: Uri?): Result<String?> =
+        withContext(Dispatchers.IO) {
+            return@withContext try {
+                val uid = auth.currentUser?.uid ?: throw Exception("Not authenticated")
+
+                val updates = mutableMapOf<String, Any>("name" to name)
+                var uploadedUrl: String? = null
+
+                if (newLocalUri != null) {
+                    val ref = storage.reference.child("profile_images/${uid}_${System.currentTimeMillis()}.jpg")
+                    ref.putFile(newLocalUri).await()
+                    uploadedUrl = ref.downloadUrl.await().toString()
+                    updates["profileImageUrl"] = uploadedUrl
+                }
+
+                firestore.collection("users").document(uid).update(updates).await()
+                Result.success(uploadedUrl)
+            } catch (e: Exception) {
+                Result.failure(e)
+            }
+        }
 
     suspend fun loginUser(email: String, pass: String): Result<String> = withContext(Dispatchers.IO) {
         return@withContext try {

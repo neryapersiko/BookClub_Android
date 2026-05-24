@@ -48,13 +48,13 @@
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toTopOf="parent"
-                app:shapeAppearanceOverlay="@style/ShapeAppearance.MaterialComponents.SmallComponent"
+                app:shapeAppearanceOverlay="@style/BookClub.Shape.Avatar"
                 app:strokeColor="@color/primary"
                 app:strokeWidth="2dp" />
 
             <Button
                 android:id="@+id/btnChangeImage"
-                style="@style/Widget.Material3.Button.TextButton"
+                style="@style/BookClub.Button.TextButton"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="Change Image"
