@@ -16,6 +16,8 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 import com.example.bookclub.ui.images.CachedImageLoader
+import com.example.bookclub.ui.images.PicassoTransforms.feedAvatar
+import com.example.bookclub.ui.images.PicassoTransforms.feedBookCover
 import java.util.UUID
 
 class PostAdapter(
@@ -76,7 +78,7 @@ class PostAdapter(
                     cacheKey = key,
                     url = profileUrl,
                     placeholder = R.drawable.avatar_default
-                ) { it.resize(120, 120).centerCrop().onlyScaleDown() }
+                ) { it.feedAvatar() }
             } else {
                 binding.ivAuthorProfile.setImageResource(R.drawable.avatar_default)
             }
@@ -108,7 +110,7 @@ class PostAdapter(
                     cacheKey = key,
                     url = coverUrl,
                     placeholder = R.drawable.book_cover_default
-                ) { it.resize(240, 360).centerCrop().onlyScaleDown() }
+                ) { it.feedBookCover() }
             } else {
                 binding.ivBookCover.setImageResource(R.drawable.book_cover_default)
             }

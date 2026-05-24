@@ -16,6 +16,7 @@ import com.example.bookclub.ui.toolbar.bindBack
 import com.example.bookclub.viewmodel.CreatePostViewModel
 import com.example.bookclub.viewmodel.CreatePostViewModelFactory
 import com.squareup.picasso.Picasso
+import com.example.bookclub.ui.images.PicassoTransforms.bookCoverPreview
 
 class AddPostFragment : Fragment() {
 
@@ -32,7 +33,10 @@ class AddPostFragment : Fragment() {
             selectedBookImageUri = it
             binding.ivBookCoverPreview.visibility = View.VISIBLE
             binding.btnRemoveBookImage.visibility = View.VISIBLE
-            Picasso.get().load(it).into(binding.ivBookCoverPreview)
+            Picasso.get()
+                .load(it)
+                .bookCoverPreview()
+                .into(binding.ivBookCoverPreview)
         }
     }
 
@@ -107,7 +111,10 @@ class AddPostFragment : Fragment() {
                     val httpsUrl = it.imageUrl.replace("http://", "https://")
                     binding.ivBookCoverPreview.visibility = View.VISIBLE
                     binding.btnRemoveBookImage.visibility = View.VISIBLE
-                    Picasso.get().load(httpsUrl).into(binding.ivBookCoverPreview)
+                    Picasso.get()
+                        .load(httpsUrl)
+                        .bookCoverPreview()
+                        .into(binding.ivBookCoverPreview)
                 }
             }
         }

@@ -8,6 +8,7 @@ import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.squareup.picasso.Picasso
 import com.example.bookclub.R
+import com.example.bookclub.ui.images.PicassoTransforms.commentAvatar
 import com.example.bookclub.databinding.ItemCommentBinding
 import com.example.bookclub.model.Comment
 
@@ -37,6 +38,7 @@ class CommentAdapter(
                     .load(comment.profileImageUrl)
                     .placeholder(R.drawable.avatar_default)
                     .error(R.drawable.avatar_default)
+                    .commentAvatar()
                     .into(binding.ivCommentAuthorProfile)
             } else {
                 binding.ivCommentAuthorProfile.setImageResource(R.drawable.avatar_default)

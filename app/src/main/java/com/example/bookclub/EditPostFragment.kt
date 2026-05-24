@@ -13,6 +13,7 @@ import androidx.navigation.fragment.navArgs
 import com.example.bookclub.databinding.FragmentEditPostBinding
 import com.example.bookclub.di.ServiceLocator
 import com.example.bookclub.ui.images.CachedImageLoader
+import com.example.bookclub.ui.images.PicassoTransforms.bookCoverPreview
 import com.example.bookclub.ui.toolbar.bindBack
 import com.example.bookclub.viewmodel.EditPostViewModel
 import com.example.bookclub.viewmodel.EditPostViewModelFactory
@@ -105,7 +106,7 @@ class EditPostFragment : Fragment() {
                         cacheKey = "book:${post.id}",
                         url = post.bookImageUrl,
                         placeholder = R.drawable.book_cover_default
-                    ) { it.resize(240, 360).centerCrop().onlyScaleDown() }
+                    ) { it.bookCoverPreview() }
                 } else {
                     binding.ivEditPostCover.setImageResource(R.drawable.book_cover_default)
                 }
@@ -118,6 +119,7 @@ class EditPostFragment : Fragment() {
                     .load(uri)
                     .placeholder(R.drawable.book_cover_default)
                     .error(R.drawable.book_cover_default)
+                    .bookCoverPreview()
                     .into(binding.ivEditPostCover)
             }
         }

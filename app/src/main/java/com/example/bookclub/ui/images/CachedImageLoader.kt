@@ -5,11 +5,14 @@ import android.widget.ImageView
 import com.example.bookclub.di.ServiceLocator
 import com.squareup.picasso.MemoryPolicy
 import com.squareup.picasso.Picasso
+import com.squareup.picasso.RequestCreator
+import com.example.bookclub.ui.images.PicassoTransforms.safeDefault
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
 /**
  * Single place to load images through the Room-backed cache + Picasso.
+ * Call sites should pass a [configure] with [PicassoTransforms]; default applies [PicassoTransforms.safeDefault].
  */
 object CachedImageLoader {
 
@@ -19,7 +22,7 @@ object CachedImageLoader {
         cacheKey: String,
         url: String,
         placeholder: Int,
-        configure: (com.squareup.picasso.RequestCreator) -> com.squareup.picasso.RequestCreator = { it }
+        configure: (RequestCreator) -> RequestCreator = { it.safeDefault() }
     ) {
         imageView.tag = cacheKey
         scope.launch {
@@ -38,4 +41,3 @@ object CachedImageLoader {
         }
     }
 }
-

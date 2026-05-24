@@ -19,6 +19,8 @@ import com.example.bookclub.ui.toolbar.bindBack
 import com.example.bookclub.viewmodel.CommentsViewModel
 import com.example.bookclub.viewmodel.CommentsViewModelFactory
 import com.squareup.picasso.Picasso
+import com.example.bookclub.ui.images.PicassoTransforms.commentsHeaderAvatar
+import com.example.bookclub.ui.images.PicassoTransforms.commentsHeaderCover
 import kotlinx.coroutines.launch
 
 class CommentsFragment : Fragment() {
@@ -77,8 +79,7 @@ class CommentsFragment : Fragment() {
                 request
                     .placeholder(R.drawable.avatar_default)
                     .error(R.drawable.avatar_default)
-                    .resize(120, 120)
-                    .centerCrop()
+                    .commentsHeaderAvatar()
                     .into(binding.ivHeaderProfile)
             }
         } else {
@@ -116,9 +117,7 @@ class CommentsFragment : Fragment() {
                 request
                     .placeholder(R.drawable.book_cover_default)
                     .error(R.drawable.book_cover_default)
-                    .resize(180, 270)
-                    .centerCrop()
-                    .onlyScaleDown()
+                    .commentsHeaderCover()
                     .into(binding.ivHeaderBookCover)
             }
         } else {

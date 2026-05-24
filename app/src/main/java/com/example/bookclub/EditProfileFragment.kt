@@ -13,6 +13,7 @@ import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
 import com.squareup.picasso.MemoryPolicy
 import com.squareup.picasso.Picasso
+import com.example.bookclub.ui.images.PicassoTransforms.profilePreview
 import com.example.bookclub.databinding.FragmentEditProfileBinding
 import com.example.bookclub.di.ServiceLocator
 import com.example.bookclub.ui.toolbar.bindBack
@@ -37,6 +38,7 @@ class EditProfileFragment : Fragment() {
             Picasso.get()
                 .load(it)
                 .memoryPolicy(MemoryPolicy.NO_CACHE, MemoryPolicy.NO_STORE)
+                .profilePreview()
                 .into(binding.ivEditProfileImage)
         }
     }
@@ -130,6 +132,7 @@ class EditProfileFragment : Fragment() {
                         .memoryPolicy(MemoryPolicy.NO_CACHE, MemoryPolicy.NO_STORE)
                         .placeholder(R.drawable.avatar_default)
                         .error(R.drawable.avatar_default)
+                        .profilePreview()
                         .into(binding.ivEditProfileImage)
                 }
                 binding.root.invalidate()

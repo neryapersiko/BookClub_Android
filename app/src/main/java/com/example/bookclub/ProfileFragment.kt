@@ -22,6 +22,7 @@ import com.example.bookclub.viewmodel.ProfileViewModelFactory
 import com.squareup.picasso.Callback
 import com.squareup.picasso.MemoryPolicy
 import com.squareup.picasso.Picasso
+import com.example.bookclub.ui.images.PicassoTransforms.profileLarge
 import kotlinx.coroutines.launch
 
 class ProfileFragment : Fragment() {
@@ -134,9 +135,7 @@ class ProfileFragment : Fragment() {
                     .memoryPolicy(MemoryPolicy.NO_CACHE, MemoryPolicy.NO_STORE)
                     .placeholder(R.drawable.avatar_default)
                     .error(R.drawable.avatar_default)
-                    .resize(500, 500)
-                    .centerCrop()
-                    .onlyScaleDown()
+                    .profileLarge()
                     .into(binding.ivProfileImage, object : Callback {
                         override fun onSuccess() {
                             Log.d("Picasso", "Profile image loaded from cache")
@@ -152,9 +151,7 @@ class ProfileFragment : Fragment() {
                     .memoryPolicy(MemoryPolicy.NO_CACHE, MemoryPolicy.NO_STORE)
                     .placeholder(R.drawable.avatar_default)
                     .error(R.drawable.avatar_default)
-                    .resize(500, 500)
-                    .centerCrop()
-                    .onlyScaleDown()
+                    .profileLarge()
                     .into(binding.ivProfileImage)
             }
         }
